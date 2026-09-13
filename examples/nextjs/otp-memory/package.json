@@ -11,10 +11,10 @@
   "dependencies": {
     "@starmode/auth": "workspace:*",
     "@repo/shared-react": "workspace:*",
-    "next": "^16.3.4",
+    "next": "^16.3.5",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "zod": "^4.6.2"
+    "zod": "^4.6.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
