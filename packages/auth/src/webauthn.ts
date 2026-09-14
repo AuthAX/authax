@@ -174,12 +174,13 @@ function parseAuthData(authData: Uint8Array): ParsedAuthData {
   }
 
   const rpIdHash = authData.subarray(0, 32);
-  const flags = authData[32]!;
-  const signCount = new DataView(
+  const view = new DataView(
     authData.buffer,
-    authData.byteOffset + 33,
-    4,
-  ).getUint32(0, false);
+    authData.byteOffset,
+    authData.byteLength,
+  );
+  const flags = view.getUint8(32);
+  const signCount = view.getUint32(33, false);
 
   const userPresent = !!(flags & 0x01);
   const userVerified = !!(flags & 0x04);

@@ -80,13 +80,18 @@ export function makeOtp(config: MakeOtpConfig): Otp {
 const OTP_RANGE = 1_000_000;
 const UNBIASED_LIMIT = Math.floor(2 ** 32 / OTP_RANGE) * OTP_RANGE;
 
+function randomUint32(): number {
+  const bytes = crypto.getRandomValues(new Uint8Array(4));
+  return new DataView(bytes.buffer).getUint32(0);
+}
+
 /** Six digits, rejection sampled to remove modulo bias */
 function makeOtpValue(): string {
-  const draw = new Uint32Array(1);
+  let draw: number;
 
   do {
-    crypto.getRandomValues(draw);
-  } while (draw[0]! >= UNBIASED_LIMIT);
+    draw = randomUint32();
+  } while (draw >= UNBIASED_LIMIT);
 
-  return (draw[0]! % OTP_RANGE).toString().padStart(6, "0");
+  return (draw % OTP_RANGE).toString().padStart(6, "0");
 }

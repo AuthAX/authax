@@ -41,17 +41,19 @@ export function decodeCbor(data: Uint8Array): CborValue {
     if (additionalInfo === 24) return readUint8();
     if (additionalInfo === 25) {
       const bytes = read(2);
-      return (bytes[0]! << 8) | bytes[1]!;
+      return new DataView(
+        bytes.buffer,
+        bytes.byteOffset,
+        bytes.byteLength,
+      ).getUint16(0);
     }
     if (additionalInfo === 26) {
       const bytes = read(4);
-      return (
-        ((bytes[0]! << 24) |
-          (bytes[1]! << 16) |
-          (bytes[2]! << 8) |
-          bytes[3]!) >>>
-        0
-      );
+      return new DataView(
+        bytes.buffer,
+        bytes.byteOffset,
+        bytes.byteLength,
+      ).getUint32(0);
     }
     throw new Error("CBOR: unsupported length encoding");
   }
