@@ -10,7 +10,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@starmode/auth": "workspace:*",
+    "authax": "workspace:*",
     "@repo/shared-react": "workspace:*",
     "next": "^16.3.5",
     "react": "^19.3.0",

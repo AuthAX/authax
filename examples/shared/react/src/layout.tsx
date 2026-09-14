@@ -6,7 +6,7 @@ export function AuthLayout(props: { children: React.ReactNode; demo: string }) {
       {props.children}
       <div className="flex gap-8 rounded-xl bg-[#F400A1]/25 p-8 text-black">
         <div className="m-auto text-center">
-          <div className="text-3xl font-bold">ΛUTH</div>
+          <div className="text-3xl font-bold">AuthAX</div>
           <p>{props.demo}</p>
         </div>
       </div>

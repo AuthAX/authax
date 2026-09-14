@@ -4,11 +4,7 @@
  * Simple in-memory stores for demonstration purposes. In a real app these
  * would be replaced with database queries.
  */
-import type {
-  ChallengeRecord,
-  CredentialRecord,
-  SessionRecord,
-} from "@starmode/auth";
+import type { ChallengeRecord, CredentialRecord, SessionRecord } from "authax";
 
 const users = new Map<string, { userId: string }>();
 let userIdCounter = 0;

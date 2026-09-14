@@ -1,6 +1,8 @@
-# ΛUTH
+# AuthAX
 
-Monorepo for [`@starmode/auth`](packages/auth).
+Monorepo for [`authax`](packages/auth).
+
+AX stands for agent experience. The name is AuthAX in prose and as the GitHub organization, authax as the package and repository name, and auth.ax as the domain.
 
 ## Licensing
 

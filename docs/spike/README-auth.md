@@ -1,4 +1,4 @@
-# ΛUTH
+# AuthAX
 
 Passkeys and OTP as composable primitives. Auth that an agent can set up in one prompt.
 
@@ -14,7 +14,7 @@ Passkeys and OTP as composable primitives. Auth that an agent can set up in one 
 ## Install
 
 ```sh
-bun add @starmode/auth
+bun add authax
 ```
 
 ## One entry point
@@ -52,11 +52,11 @@ import {
   memoryOtpStorage,
   sessionHmac,
   otpDeliveryConsole,
-} from "@starmode/auth";
+} from "authax";
 import {
   sessionTransportTanstack,
   sessionCookieDefaults,
-} from "@starmode/auth/tanstack"; // or /nextjs
+} from "authax/tanstack"; // or /nextjs
 
 export const auth = makeAuth({
   storage: memorySessionStorage(),

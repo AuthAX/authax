@@ -2,7 +2,7 @@ import { z } from "zod";
 import type {
   PasskeyAuthenticationCredential,
   PasskeyRegistrationCredential,
-} from "@starmode/auth";
+} from "authax";
 
 /**
  * Zod mirrors of the passkey ceremony input contracts, for validating

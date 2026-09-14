@@ -1,6 +1,6 @@
 IMPORTANT: THIS IS A LOOSE SPEC THAT WE _SHOULD_ CHANGE AS WE IMPLEMENT AND FIND BETTER PATTERNS
 
-# ΛUTH
+# AuthAX
 
 The LLM-friendly auth library. Auth that AI can set up in one prompt.
 
@@ -332,7 +332,7 @@ One entry point, builder-style: `makeAuth(session).withOtp(otp).withPasskey(pass
 
 The library provides a REST-based architecture. Server exposes `makeAuthHandler`, client uses `makeAuthClient`. Session management uses cookies automatically.
 
-### Server module (`@starmode/auth`)
+### Server module (`authax`)
 
 See `examples/tanstack-start/src/lib/auth.ts` for a working example. Config types (`OtpAuthConfig`, `PasskeyAuthConfig`, `FullAuthConfig`) and all storage/adapter types are documented in `packages/auth/src/types.ts`.
 
@@ -381,8 +381,8 @@ Session transport:
 ✓ sessionTransportCookie()     — generic cookie-based session transport
 ✓ sessionTransportHeader()     — header-based session transport
 ✓ sessionTransportMemory()     — in-memory (testing)
-✓ sessionTransportTanstack()   — TanStack Start cookie transport (@starmode/auth/tanstack)
-✓ sessionTransportNextjs()     — Next.js cookie transport (@starmode/auth/nextjs)
+✓ sessionTransportTanstack()   — TanStack Start cookie transport (authax/tanstack)
+✓ sessionTransportNextjs()     — Next.js cookie transport (authax/nextjs)
 
 Handler:
 ✓ makeAuthHandler()            — REST handler for auth API
@@ -405,7 +405,7 @@ Client:
 
 User management is app responsibility, but the sign-up flow has potential for race conditions: two tabs verify OTP for the same email simultaneously, both see "no user exists", both try to create. Database examples should demonstrate race-safe patterns (e.g., `ON CONFLICT` for PostgreSQL/SQLite, `ON DUPLICATE KEY` for MySQL).
 
-### Client module (`@starmode/auth/client`)
+### Client module (`authax/client`)
 
 See `AuthClient` type in `packages/auth/src/types.ts` for the full interface. The client combines:
 
@@ -713,7 +713,7 @@ _Future:_
 
 ## Positioning
 
-**@starmode/auth**: Passkeys + OTP as composable primitives. Your flow, your rules.
+**authax**: Passkeys + OTP as composable primitives. Your flow, your rules.
 
 Do you want passkeys? Yes → use this. No → this isn't for you.
 

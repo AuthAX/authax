@@ -1,9 +1,4 @@
-import {
-  makeAuth,
-  makeOpaqueSession,
-  makeOtp,
-  makeOtpStrategy,
-} from "@starmode/auth";
+import { makeAuth, makeOpaqueSession, makeOtp, makeOtpStrategy } from "authax";
 import { db } from "./db";
 
 const session = makeOpaqueSession({

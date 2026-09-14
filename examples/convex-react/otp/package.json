@@ -11,7 +11,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@starmode/auth": "workspace:*",
+    "authax": "workspace:*",
     "@repo/shared-react": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "convex": "^1.45.0",

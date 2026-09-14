@@ -144,7 +144,7 @@ Strategies do not repeat a generic user lookup DI. OTP binds a verified external
 
 ## OIDC boundary
 
-Consumer side OIDC is a future authentication strategy beside OTP and passkeys, already proven as an arbitrary namespace in the playground and the composition evidence. Making ΛUTH an OIDC or OAuth provider is a separate identity server product and out of scope.
+Consumer side OIDC is a future authentication strategy beside OTP and passkeys, already proven as an arbitrary namespace in the playground and the composition evidence. Making AuthAX an OIDC or OAuth provider is a separate identity server product and out of scope.
 
 ## Relationship to the other spikes
 
