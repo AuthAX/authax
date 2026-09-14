@@ -4,19 +4,6 @@ This is security-critical code. Keep it minimal, more code means more attack sur
 
 The repo is public. Write for a reader who knows nothing beyond what is in the repo, and include nothing private or unreleased.
 
-## Documentation map
-
-Take any piece of content and go down this list in order. The first match is where it goes.
-
-1. `packages/auth/src/contracts.ts` and its tests: what the library does or guarantees.
-2. `packages/auth/README.md`: how to use the library.
-3. `README.md`: why the project exists and how it differs.
-4. `AGENTS.md`: a rule every session must follow, whatever the task.
-5. `.agents/skills/*/SKILL.md`: one kind of job, loaded only when doing it.
-6. `examples/*/*/README.md`: how to run that example and what it shows.
-
-`SPEC.md` and `docs/` are history, not authority.
-
 ## Code style
 
 - No optional parameters and no defaults.
@@ -31,7 +18,22 @@ Take any piece of content and go down this list in order. The first match is whe
 
 ## Tests
 
-Every test proves one behavioral claim using a test oracle derived from an authority. The implementation under test is never an authority or test oracle. When no authority determines the expected behavior, ask the user.
+- Every test proves one behavioral claim using a test oracle derived from an authority.
+- The implementation under test is never an authority or test oracle.
+- When no authority determines the expected behavior, ask the user.
+
+## Documentation map
+
+Take any piece of content and go down this list in order. The first match is where it goes.
+
+1. `packages/auth/src/contracts.ts` and its tests: what the library does or guarantees.
+2. `packages/auth/README.md`: how to use the library.
+3. `README.md`: why the project exists and how it differs.
+4. `AGENTS.md`: a rule every session must follow, whatever the task.
+5. `.agents/skills/*/SKILL.md`: one kind of job, loaded only when doing it.
+6. `examples/*/*/README.md`: how to run that example and what it shows.
+
+`SPEC.md` and `docs/` are history, not authority.
 
 ## Prose style
 
