@@ -16,9 +16,9 @@
     "typecheck": "bun run --filter '*' typecheck",
     "check": "bun run format:check && bun run lint:check && bun run test:run && bun run typecheck",
     "outdated": "bun outdated --recursive",
-    "update": "bun update && for dir in packages/*/ examples/*/*/; do (cd \"$dir\" && bun update) || exit 1; done",
-    "update:latest": "bun update --latest && for dir in packages/*/ examples/*/*/; do (cd \"$dir\" && bun update --latest) || exit 1; done",
-    "clean:soft": "rm -rf node_modules packages/*/node_modules examples/*/*/{node_modules,.next,.output,tsconfig.tsbuildinfo} && bun install",
+    "update": "bun update --recursive",
+    "update:latest": "bun update --latest --recursive",
+    "clean:soft": "rm -rf node_modules packages/*/node_modules examples/*/*/{node_modules,.next,.tanstack,dist,tsconfig.tsbuildinfo} && bun install",
     "clean:hard": "rm -rf bun.lock && bun run clean:soft"
   },
   "devDependencies": {
