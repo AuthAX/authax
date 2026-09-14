@@ -35,7 +35,6 @@
     "@eslint/js": "^10.0.1",
     "@tanstack/react-start": "^1.168.54",
     "eslint": "^10.10.0",
-    "globals": "^17.12.0",
     "neon-testing": "^3.0.1",
     "typescript-eslint": "^8.70.0"
   }
