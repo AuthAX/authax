@@ -6,6 +6,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "typecheck": "tsc"
+  },
   "dependencies": {
     "zod": "^4.6.4",
     "@starmode/auth": "workspace:*"

@@ -117,13 +117,13 @@ Core contains no debug flag because core swallows no causes. A shipped mechanism
 
 ## Current files
 
-| Location                                                                     | Role                                                                                       |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| [`src/contracts.ts`](./src/contracts.ts)                                     | Public construction, session, OTP, and passkey contracts                                   |
-| [`src/make-auth.ts`](./src/make-auth.ts)                                     | Runtime microkernel with no mechanism branches                                             |
-| [`src/contracts-typecheck.ts`](./src/contracts-typecheck.ts)                 | Compile-time proofs for construction, projection, strategy boundaries, and exact inference |
+| Location                                                                       | Role                                                                                       |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| [`src/contracts.ts`](./src/contracts.ts)                                       | Public construction, session, OTP, and passkey contracts                                   |
+| [`src/make-auth.ts`](./src/make-auth.ts)                                       | Runtime microkernel with no mechanism branches                                             |
+| [`src/contracts-typecheck.ts`](./src/contracts-typecheck.ts)                   | Compile-time proofs for construction, projection, strategy boundaries, and exact inference |
 | [`src/session-capability-typecheck.ts`](./src/session-capability-typecheck.ts) | Compile-time proofs for capability-dependent session surfaces                              |
-| [`src/mechanisms/`](./src/mechanisms/)                                       | Environment-free session, OTP, and passkey mechanisms                                      |
+| [`src/mechanisms/`](./src/mechanisms/)                                         | Environment-free session, OTP, and passkey mechanisms                                      |
 
 The intended library has more than one public layer.
 

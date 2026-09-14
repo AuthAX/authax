@@ -14,8 +14,10 @@
     "src/"
   ],
   "scripts": {
-    "lint": "eslint --fix",
-    "test": "vitest run"
+    "lint:check": "eslint",
+    "lint:fix": "eslint --fix",
+    "test:run": "vitest run",
+    "typecheck": "tsc"
   },
   "peerDependencies": {
     "@tanstack/react-start": "^1.161.1",

@@ -1,15 +1,20 @@
 {
   "name": "@repo/monorepo",
   "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*",
     "examples/*/*"
   ],
   "scripts": {
-    "format": "prettier --write .",
-    "check": "for dir in packages/*/ examples/*/*/; do (cd \"$dir\" && tsc) || exit 1; done",
-    "test": "vitest run",
+    "format:check": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "lint:check": "bun run --filter '*' lint:check",
+    "lint:fix": "bun run --filter '*' lint:fix",
+    "test:run": "vitest run",
     "test:watch": "vitest",
+    "typecheck": "bun run --filter '*' typecheck",
+    "check": "bun run format:check && bun run lint:check && bun run test:run && bun run typecheck",
     "outdated": "bun outdated --recursive",
     "update": "bun update && for dir in packages/*/ examples/*/*/; do (cd \"$dir\" && bun update) || exit 1; done",
     "update:latest": "bun update --latest && for dir in packages/*/ examples/*/*/; do (cd \"$dir\" && bun update --latest) || exit 1; done",

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite dev --port 3102",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@starmode/auth": "workspace:*",

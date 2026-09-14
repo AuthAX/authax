@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev --port 3200",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@starmode/auth": "workspace:*",

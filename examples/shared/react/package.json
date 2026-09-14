@@ -7,6 +7,9 @@
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css"
   },
+  "scripts": {
+    "typecheck": "tsc"
+  },
   "peerDependencies": {
     "react": "^19.3.0",
     "tailwindcss": "^4.3.3"
