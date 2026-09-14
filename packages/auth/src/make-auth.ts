@@ -1,3 +1,4 @@
+import { invariant } from "./invariant";
 import type {
   Auth,
   SessionAdapter,
@@ -20,10 +21,10 @@ function makeStrategyKernel<
         return proof;
       }
 
-      if (!("data" in proof)) {
-        // Invariant: successful authentication always returns an AuthUser.
-        throw new Error("Successful authentication returned no user");
-      }
+      invariant(
+        "data" in proof,
+        "successful authentication always returns an AuthUser",
+      );
 
       const createdSession = await session.establish(proof.data.userId);
 

@@ -13,7 +13,7 @@ The repo is public. Write for a reader who knows nothing beyond what is in the r
 
 ## Error handling
 
-- Never use type assertions. Where a value must have a shape, check it and throw, with a comment starting `Invariant:` that states why.
+- Use `invariant` from `packages/auth/src/invariant.ts` for a case that cannot happen.
 - Prove the error with a test before adding a try-catch.
 
 ## Tests

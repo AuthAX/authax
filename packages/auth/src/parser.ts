@@ -1,3 +1,5 @@
+import { invariant } from "./invariant";
+
 /**
  * Minimal schema-based parser
  *
@@ -26,8 +28,7 @@ function obj<T extends Record<string, Parser<unknown>>>(
     for (const key in shape) {
       const parser = shape[key];
 
-      // Invariant: all keys in the shape have a parser
-      if (!parser) throw new Error(`missing parser for key: ${key}`);
+      invariant(parser, `every key in the shape has a parser, missing ${key}`);
 
       try {
         const parsed = parser(input[key]);
@@ -35,10 +36,7 @@ function obj<T extends Record<string, Parser<unknown>>>(
           result[key] = parsed as ReturnType<T[typeof key]>;
         }
       } catch (error) {
-        // Invariant: all parsers throw an Error
-        if (!(error instanceof Error)) {
-          throw new Error(`Unexpected error: ${error}`, { cause: error });
-        }
+        invariant(error instanceof Error, "every parser throws an Error");
 
         throw new Error(`"${key}": ${error.message}`, { cause: error });
       }

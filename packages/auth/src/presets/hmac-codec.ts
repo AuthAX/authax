@@ -1,3 +1,4 @@
+import { invariant } from "../invariant";
 import { encodePayload, decodePayload, hmacSign, hmacVerify } from "../crypto";
 
 /** Options for HMAC encode - either TTL or absolute expiration */
@@ -32,8 +33,10 @@ export function makeHmacCodec<TPayload extends object>(options: {
       const encoded = encodePayload({ ...payload, exp });
       const signature = await hmacSign(encoded, options.secret);
 
-      // Invariant: signature must exist for valid HMAC key
-      if (!signature) throw new Error("HMAC signing failed");
+      invariant(
+        signature,
+        "signing with a valid HMAC key produces a signature",
+      );
 
       return `${encoded}.${signature}`;
     },

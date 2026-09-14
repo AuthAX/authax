@@ -1,3 +1,5 @@
+import { invariant } from "./invariant";
+
 /**
  * Crypto primitives using Web Crypto API
  *
@@ -31,10 +33,14 @@ export function base64urlDecode(str: string): Uint8Array | null {
 /** Convert base64url string to ArrayBuffer */
 export function base64urlToBuffer(base64url: string): ArrayBuffer {
   const bytes = base64urlDecode(base64url);
-  // Invariant: base64urlDecode only returns null for malformed input; WebAuthn options from server are well-formed
-  if (!bytes) throw new Error("Invalid base64url string");
+
+  invariant(
+    bytes,
+    "WebAuthn options from the server are well-formed base64url",
+  );
+
   // Create a fresh ArrayBuffer (not SharedArrayBuffer) for WebAuthn API compatibility
-  return new Uint8Array(bytes).buffer as ArrayBuffer;
+  return new Uint8Array(bytes).buffer;
 }
 
 /** Convert ArrayBuffer to base64url string */
