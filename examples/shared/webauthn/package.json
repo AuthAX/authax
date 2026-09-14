@@ -10,7 +10,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "zod": "^4.6.4",
+    "zod": "^4.6.5",
     "@starmode/auth": "workspace:*"
   },
   "devDependencies": {
