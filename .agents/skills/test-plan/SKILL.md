@@ -7,6 +7,19 @@ description: Plan test coverage for one contract unit at a time. Use when identi
 
 Produce a compact assurance inventory for one contract unit. A contract unit is a public factory, adapter, namespace method, parser, or similarly coherent behavioral boundary; it is not necessarily one physical file.
 
+<!--
+Moved verbatim from AGENTS.md on 2026-09-13, not yet integrated into this skill:
+
+## Vocabulary
+
+- Authority — the source that determines expected behavior, following the documentation map; e.g. a contract, requirement, governing standard, or user/domain expert
+  Example: The contract says a token is expired only when `expiresAt < now`
+- Behavioral claim — what must be true
+  Example: A token is not expired when `expiresAt === now`
+- Test oracle — the expected result or decision rule for a given case
+  Example: `expired` is `false`, encoded as `expect(decoded?.token.expired).toBe(false)`
+ -->
+
 ## Scope
 
 1. Require the user to name one target contract unit. If the target is absent or ambiguous, ask before investigating.
@@ -20,6 +33,12 @@ Before inventorying claims:
 1. Identify the behavior the target owns and its settled, separately testable collaborators from user requirements and the authoritative documentation and type structure identified by `AGENTS.md`. Implementation may reveal candidate boundaries, but never behavior or a test oracle; ask when ownership is unclear.
 2. Inspect direct collaborator tests for delegated behavior required by the target. If required behavior lacks direct evidence, report `/test-plan <collaborator>` as a prerequisite and stop before the target inventory.
 3. Inventory only target-owned policy, translation, validation, and observable wiring. Do not count collaborator conformance as target coverage or require internal call-count evidence.
+
+<!--
+Moved verbatim from AGENTS.md on 2026-09-13, not yet integrated into this skill:
+
+Place each claim at the lowest contract unit that owns the behavior, and establish required collaborator coverage before wrapper tests. Wrapper tests cover the wrapper's policy, translation, validation, and observable wiring; collaborator conformance belongs in the collaborator's test file. Prove wiring through public outcomes, not internal call counts.
+-->
 
 ## Claims and evidence
 

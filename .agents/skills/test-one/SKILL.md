@@ -27,9 +27,22 @@ Derive the test oracle from an authority, never from the implementation under te
 
 The user's claim approval is the authorization to proceed; do not add another approval gate unless expected behavior is unclear.
 
+<!--
+Moved verbatim from AGENTS.md on 2026-09-13, not yet integrated into this skill:
+
+## Organization
+
+- One contract unit per test file; the filename identifies it, so don't repeat it in an outer `describe`
+- Group `describe` blocks by the unit's real behavioral concerns or failure modes; reuse sibling group names where they fit, never impose a fixed taxonomy
+- Prefer no more than one `describe` level; use an ungrouped `test` when grouping adds no orientation
+- Use `test` and `test.each`, not `it`
+- Test names state complete behavioral claims using API vocabulary; name the responsible public operation or subject when the group does not
+- Use scenario comments when a non-obvious transition or sequence matters to the claim; state intent, never mechanics already clear from the code
+- Split multiple public units into separate test files when practical
+-->
+
 ## Write the test
 
-- Follow the test-organization and style rules in `AGENTS.md`.
 - Add exactly one `test` or `test.each` declaration.
 - Use `test.each` only when every named case is equivalent evidence for the same claim.
 - Match the target file's established behavioral grouping.
