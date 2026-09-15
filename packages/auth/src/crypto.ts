@@ -1,4 +1,4 @@
-import { invariant } from "./invariant";
+import { invariant } from "./lib";
 
 /**
  * Crypto primitives using Web Crypto API

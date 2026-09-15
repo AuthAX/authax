@@ -1,4 +1,4 @@
-import { invariant } from "../invariant";
+import { invariant } from "../lib";
 import { encodePayload, decodePayload, hmacSign, hmacVerify } from "../crypto";
 
 /** Options for HMAC encode - either TTL or absolute expiration */
