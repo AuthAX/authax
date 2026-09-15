@@ -13,7 +13,7 @@ The repo is public. Write for a reader who knows nothing beyond what is in the r
 
 ## Error handling
 
-- Use `invariant` from `packages/auth/src/invariant.ts` for a case that cannot happen.
+- Use `invariant` from `packages/auth/src/lib.ts` for a case that cannot happen.
 - Prove the error with a test before adding a try-catch.
 
 ## Tests
