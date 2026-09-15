@@ -31,22 +31,15 @@ test("verifyAdditionalRegistration rejects a mismatched user before storing the 
     storage: {
       store: (record) => {
         credentials.set(record.credentialId, record);
-        return Promise.resolve();
       },
-      get: (credentialId) =>
-        Promise.resolve(credentials.get(credentialId) ?? null),
+      get: (credentialId) => credentials.get(credentialId) ?? null,
       list: (userId) =>
-        Promise.resolve(
-          [...credentials.values()].filter(
-            (record) => record.userId === userId,
-          ),
-        ),
+        [...credentials.values()].filter((record) => record.userId === userId),
       setCounter: (credentialId, counter) => {
         const record = credentials.get(credentialId);
         if (record !== undefined) {
           credentials.set(credentialId, { ...record, counter });
         }
-        return Promise.resolve();
       },
     },
     challenge: {
@@ -54,12 +47,11 @@ test("verifyAdditionalRegistration rejects a mismatched user before storing the 
       storage: {
         store: (record) => {
           challenges.set(record.challenge, record);
-          return Promise.resolve();
         },
         take: (value) => {
           const record = challenges.get(value) ?? null;
           challenges.delete(value);
-          return Promise.resolve(record);
+          return record;
         },
       },
     },

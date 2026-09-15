@@ -24,12 +24,14 @@ export type CredentialRecord = {
 
 /** Credential (passkey) storage adapter */
 export type CredentialStorage = {
-  store: (record: CredentialRecord) => Promise<void>;
-  get: (credentialId: string) => Promise<CredentialRecord | null>;
+  store: (record: CredentialRecord) => void | Promise<void>;
+  get: (
+    credentialId: string,
+  ) => CredentialRecord | null | Promise<CredentialRecord | null>;
   /** All credentials belonging to the user */
-  list: (userId: string) => Promise<CredentialRecord[]>;
+  list: (userId: string) => CredentialRecord[] | Promise<CredentialRecord[]>;
   /** Plain overwrite of the WebAuthn signature counter after authentication */
-  setCounter: (credentialId: string, counter: number) => Promise<void>;
+  setCounter: (credentialId: string, counter: number) => void | Promise<void>;
 };
 
 /** WebAuthn challenge record (single-use) */
@@ -43,9 +45,11 @@ export type ChallengeRecord = {
 
 /** Challenge storage adapter. Challenges are single-use. */
 export type ChallengeStorage = {
-  store: (record: ChallengeRecord) => Promise<void>;
+  store: (record: ChallengeRecord) => void | Promise<void>;
   /** Atomic fetch-and-delete. Unknown challenge returns null. */
-  take: (challenge: string) => Promise<ChallengeRecord | null>;
+  take: (
+    challenge: string,
+  ) => ChallengeRecord | null | Promise<ChallengeRecord | null>;
 };
 
 /** WebAuthn protocol identity — who the relying party is and which origins may speak for it */

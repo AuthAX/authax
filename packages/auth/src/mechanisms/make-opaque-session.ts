@@ -16,7 +16,9 @@ export type SessionRecord = {
 
 /** Read half of session storage, sufficient for resolution */
 export type SessionReadStorage = {
-  get: (sessionId: string) => Promise<SessionRecord | null>;
+  get: (
+    sessionId: string,
+  ) => SessionRecord | null | Promise<SessionRecord | null>;
 };
 
 /**
@@ -24,8 +26,8 @@ export type SessionReadStorage = {
  * mechanism enforces expiry.
  */
 export type SessionStorage = SessionReadStorage & {
-  store: (record: SessionRecord) => Promise<void>;
-  delete: (sessionId: string) => Promise<void>;
+  store: (record: SessionRecord) => void | Promise<void>;
+  delete: (sessionId: string) => void | Promise<void>;
 };
 
 /** Credential issued when an opaque session is established */

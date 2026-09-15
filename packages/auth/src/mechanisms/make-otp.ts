@@ -14,8 +14,8 @@ export type OtpRecord = {
  * fetch-and-delete; an unknown identifier returns null.
  */
 export type OtpStorage = {
-  store: (record: OtpRecord) => Promise<void>;
-  take: (identifier: string) => Promise<OtpRecord | null>;
+  store: (record: OtpRecord) => void | Promise<void>;
+  take: (identifier: string) => OtpRecord | null | Promise<OtpRecord | null>;
 };
 
 /** OTP delivery adapter (email, SMS, console) */
