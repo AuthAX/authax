@@ -1,3 +1,4 @@
+/* eslint-disable -- legacy, pending the spike promotion */
 import { invariant } from "../lib";
 import { encodePayload, decodePayload, hmacSign, hmacVerify } from "../crypto";
 

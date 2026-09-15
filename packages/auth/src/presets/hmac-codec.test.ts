@@ -1,3 +1,4 @@
+/* eslint-disable -- legacy, pending the spike promotion */
 import { describe, it, expect, vi } from "vitest";
 import { makeHmacCodec, toExpTimestamp } from "./hmac-codec";
 

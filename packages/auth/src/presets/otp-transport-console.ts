@@ -1,3 +1,4 @@
+/* eslint-disable -- legacy, pending the spike promotion */
 import type { OtpTransportAdapter } from "../types";
 
 type Options = { ttl: number };

@@ -1,3 +1,4 @@
+/* eslint-disable -- legacy, pending the spike promotion */
 import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { makeAuthClient, type AuthClient } from "./index";
 

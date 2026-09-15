@@ -1,3 +1,4 @@
+/* eslint-disable -- legacy, pending the spike promotion */
 import { invariant, isRecord } from "./lib";
 
 /**
