@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { makeAuthClient, type AuthClient } from "./index";
 
 describe("makeAuthClient", () => {
@@ -266,35 +266,19 @@ describe("makeAuthClient", () => {
 });
 
 describe("client types", () => {
-  it("exports AuthClient type", async () => {
-    // Type-level test: if this compiles, the types are exported correctly
-    const _typeCheck = async () => {
-      const { makeAuthClient } = await import("./index");
-      const auth = makeAuthClient("/api/auth");
+  it("exports AuthClient type", () => {
+    const auth = makeAuthClient("/api/auth");
 
-      // These should all type-check
-      (await auth.requestOtp({
-        identifier: "test@example.com",
-      })) satisfies { success: boolean };
-      (await auth.verifyOtp({
-        identifier: "test@example.com",
-        otp: "123456",
-      })) satisfies { success: boolean };
-      (await auth.signOut()) satisfies void;
-    };
-    void _typeCheck;
-
-    expect(true).toBe(true);
+    expectTypeOf(auth.requestOtp).returns.resolves.toExtend<{
+      success: boolean;
+    }>();
+    expectTypeOf(auth.verifyOtp).returns.resolves.toExtend<{
+      success: boolean;
+    }>();
+    expectTypeOf(auth.signOut).returns.resolves.toBeVoid();
   });
 
   it("AuthClient matches makeAuthClient return type", () => {
-    // Type-level test: AuthClient can be assigned from makeAuthClient
-    const _typeCheck = () => {
-      const auth: AuthClient = makeAuthClient("/api/auth");
-      return auth;
-    };
-    void _typeCheck;
-
-    expect(true).toBe(true);
+    expectTypeOf(makeAuthClient).returns.toEqualTypeOf<AuthClient>();
   });
 });

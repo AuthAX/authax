@@ -82,7 +82,7 @@ function tagged<
   variants: TVariants,
 ): Parser<
   {
-    [K in keyof TVariants]: { [P in TTag]: K } & ReturnType<TVariants[K]>;
+    [K in keyof TVariants]: Record<TTag, K> & ReturnType<TVariants[K]>;
   }[keyof TVariants]
 > {
   const validTags = Object.keys(variants);
@@ -105,7 +105,7 @@ function tagged<
 
     const parsed = parser(input);
     return { ...parsed, [tag]: tagValue } as {
-      [K in keyof TVariants]: { [P in TTag]: K } & ReturnType<TVariants[K]>;
+      [K in keyof TVariants]: Record<TTag, K> & ReturnType<TVariants[K]>;
     }[keyof TVariants];
   };
 }

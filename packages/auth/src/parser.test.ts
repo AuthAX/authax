@@ -98,10 +98,12 @@ describe("p.array", () => {
   });
 
   it("parses array of strings (Array constructor)", () => {
+    // eslint-disable-next-line @typescript-eslint/no-array-constructor -- the test covers constructor-built arrays
     expect(parse(new Array("a", "b"))).toStrictEqual(["a", "b"]);
   });
 
   it("parses array of strings (Array function)", () => {
+    // eslint-disable-next-line @typescript-eslint/no-array-constructor -- the test covers constructor-built arrays
     expect(parse(Array("a", "b"))).toStrictEqual(["a", "b"]);
   });
 

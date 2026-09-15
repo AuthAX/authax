@@ -14,8 +14,14 @@ export { sessionCookieDefaults };
  */
 export const sessionTransportTanstack = (options: SessionCookieOptions) =>
   sessionTransportCookie({
-    get: (name) => getCookie(name),
-    set: (name, value, opts) => setCookie(name, value, opts),
-    clear: (name, opts) => setCookie(name, "", opts),
+    get: (name) => {
+      return getCookie(name);
+    },
+    set: (name, value, opts) => {
+      setCookie(name, value, opts);
+    },
+    clear: (name, opts) => {
+      setCookie(name, "", opts);
+    },
     options,
   });

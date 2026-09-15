@@ -30,18 +30,18 @@ const payloadEnvelope: {
   success: true;
   data: { userId: string };
 } = payloadSuccess;
-void payloadEnvelope;
+expectType(payloadEnvelope);
 
 // @ts-expect-error A success payload is nested in data.
-void payloadSuccess.userId;
+expectType(payloadSuccess.userId);
 
 declare const voidSuccess: Result<void, never>;
 
 const voidEnvelope: { success: true } = voidSuccess;
-void voidEnvelope;
+expectType(voidEnvelope);
 
 // @ts-expect-error A void success has no data.
-void voidSuccess.data;
+expectType(voidSuccess.data);
 
 declare const fallible: Result<
   { userId: string },
@@ -49,23 +49,23 @@ declare const fallible: Result<
 >;
 
 // @ts-expect-error Data requires success narrowing.
-void fallible.data;
+expectType(fallible.data);
 
 // @ts-expect-error Error requires failure narrowing.
-void fallible.error;
+expectType(fallible.error);
 
 if (fallible.success) {
   const userId: string = fallible.data.userId;
-  void userId;
+  expectType(userId);
 
   // @ts-expect-error The success branch has no error.
-  void fallible.error;
+  expectType(fallible.error);
 } else {
   const error: "authentication_disabled" | "invalid_otp" = fallible.error;
-  void error;
+  expectType(error);
 
   // @ts-expect-error The failure branch has no data.
-  void fallible.data;
+  expectType(fallible.data);
 }
 
 type SessionClaims = SessionIdentity & {
@@ -109,13 +109,13 @@ expectType<OtpStrategy<ResolvedUser, SessionCredential>>(auth.strategies.otp);
 expectType<PasskeyStrategy<SessionCredential>>(auth.strategies.passkeys);
 
 // @ts-expect-error An unconfigured namespace is unavailable.
-void auth.strategies.google;
+expectType(auth.strategies.google);
 
 // @ts-expect-error An empty map exposes no strategy namespace.
-void sessionOnly.strategies.otp;
+expectType(sessionOnly.strategies.otp);
 
 // @ts-expect-error Strategies remain nested under strategies.
-void auth.otp;
+expectType(auth.otp);
 
 function otpBundle<Identity extends SessionIdentity, Credential>(
   kernel: StrategyKernel<Identity, Credential>,
@@ -129,22 +129,24 @@ expectType<OtpStrategy<ResolvedUser, SessionCredential>>(
   bundleAuth.strategies.otp,
 );
 
-expectType<Promise<SessionClaims | null>>(auth.session.get("token"));
-expectType<Promise<SessionClaims | null>>(auth.session.get(null));
-expectType<Promise<RefreshedCredential>>(auth.session.refresh("refresh-token"));
-expectType<Promise<void>>(auth.session.end(null));
+void expectType<Promise<SessionClaims | null>>(auth.session.get("token"));
+void expectType<Promise<SessionClaims | null>>(auth.session.get(null));
+void expectType<Promise<RefreshedCredential>>(
+  auth.session.refresh("refresh-token"),
+);
+void expectType<Promise<void>>(auth.session.end(null));
 
 // @ts-expect-error get requires the presented token.
 void auth.session.get();
 
 // @ts-expect-error Direct session establishment is not public.
-void auth.session.establish;
+expectType(auth.session.establish);
 
 // @ts-expect-error Direct session establishment is absent with an empty map.
-void sessionOnly.session.establish;
+expectType(sessionOnly.session.establish);
 
 // @ts-expect-error There is no accumulating builder.
-void auth.withOtp;
+expectType(auth.withOtp);
 
 const sessionWithPublicGet = {
   kernel: session.kernel,
@@ -172,13 +174,13 @@ void makeAuth(session, () => ({ invalid: 1 }));
 declare const kernel: StrategyKernel<SessionClaims, SessionCredential>;
 declare const prove: () => Promise<Result<ResolvedUser, "invalid_otp">>;
 
-expectType<Promise<SessionClaims | null>>(kernel.current("token"));
+void expectType<Promise<SessionClaims | null>>(kernel.current("token"));
 
 // @ts-expect-error current requires the presented token.
 void kernel.current();
 
 // @ts-expect-error Strategies never receive establishment directly.
-void kernel.establish;
+expectType(kernel.establish);
 
 async function kernelProbe(): Promise<void> {
   const outcome = await kernel.authenticate(prove);
@@ -191,7 +193,7 @@ async function kernelProbe(): Promise<void> {
   }
 }
 
-void kernelProbe;
+expectType(kernelProbe);
 
 async function otpProbe(): Promise<void> {
   const outcome = await auth.strategies.otp.authenticate({
@@ -205,7 +207,7 @@ async function otpProbe(): Promise<void> {
   }
 }
 
-void otpProbe;
+expectType(otpProbe);
 
 declare const registrationProof: Awaited<
   ReturnType<PasskeyEngine["verifyRegistration"]>
@@ -215,7 +217,7 @@ if (registrationProof.success) {
   expectType<AuthUser>(registrationProof.data);
 
   // @ts-expect-error An engine proof never establishes a session.
-  void registrationProof.data.session;
+  expectType(registrationProof.data.session);
 }
 
 declare const vouchedRegistrationProof: Awaited<
@@ -226,7 +228,7 @@ if (vouchedRegistrationProof.success) {
   expectType<AuthUser>(vouchedRegistrationProof.data);
 
   // @ts-expect-error An engine proof never establishes a session.
-  void vouchedRegistrationProof.data.session;
+  expectType(vouchedRegistrationProof.data.session);
 }
 
 declare const additionalRegistrationProof: Awaited<
@@ -237,7 +239,7 @@ if (additionalRegistrationProof.success) {
   expectType<AuthUser>(additionalRegistrationProof.data);
 
   // @ts-expect-error An engine proof never establishes a session.
-  void additionalRegistrationProof.data.session;
+  expectType(additionalRegistrationProof.data.session);
 }
 
 declare const authenticationProof: Awaited<
@@ -248,7 +250,7 @@ if (authenticationProof.success) {
   expectType<AuthUser>(authenticationProof.data);
 
   // @ts-expect-error An engine proof never establishes a session.
-  void authenticationProof.data.session;
+  expectType(authenticationProof.data.session);
 }
 
 void auth.strategies.passkeys.createVouchedRegistrationOptions({
@@ -276,10 +278,10 @@ void auth.strategies.passkeys.verifyAdditionalRegistration({
 });
 
 // @ts-expect-error Stored passkeys are listed directly from application storage.
-void auth.strategies.passkeys.list;
+expectType(auth.strategies.passkeys.list);
 
 // @ts-expect-error Stored passkeys are removed directly from application storage.
-void auth.strategies.passkeys.remove;
+expectType(auth.strategies.passkeys.remove);
 
 void auth.strategies.otp.authenticate({
   identifier: "person@example.com",
