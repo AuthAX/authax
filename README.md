@@ -4,6 +4,11 @@ Monorepo for [`authax`](packages/authax).
 
 AX stands for agent experience. The name is AuthAX in prose and as the GitHub organization, authax as the package and repository name, and auth.ax as the domain.
 
+- npm package [authax](https://www.npmjs.com/package/authax)
+- npm organization [authax](https://www.npmjs.com/org/authax)
+- GitHub organization [AuthAX](https://github.com/AuthAX)
+- Domain [auth.ax](https://auth.ax)
+
 ## Licensing
 
 Licensing is per workspace. Each workspace states its license in its package.json and carries the full text in its LICENSE.md.
