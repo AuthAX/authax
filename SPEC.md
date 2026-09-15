@@ -91,28 +91,28 @@ This means:
 | **Identity verification** | Prove handle ownership |
 | **Identity handle**       | User identifier        |
 
-| Method                       | Authentication | Identity verification | Identity handle |
-| ---------------------------- | -------------- | --------------------- | --------------- |
-| ★ **Passkey**                | ✅             | ❌                    |                 |
-| ★ **OTP (for auth)**         | ✅             | ✅                    | Email/phone     |
-| ★ **OTP (for verification)** | ❌             | ✅                    | Email/phone     |
-| **Username+password**        | ✅             | ❌                    | Username        |
-| **Email+password**           | ✅             | ✅                    | Email           |
-| **Passport verification**    | ❌             | ✅                    | Name            |
+| Method | Authentication | Identity verification | Identity handle |
+| --- | --- | --- | --- |
+| ★ **Passkey** | ✅ | ❌ |  |
+| ★ **OTP (for auth)** | ✅ | ✅ | Email/phone |
+| ★ **OTP (for verification)** | ❌ | ✅ | Email/phone |
+| **Username+password** | ✅ | ❌ | Username |
+| **Email+password** | ✅ | ✅ | Email |
+| **Passport verification** | ❌ | ✅ | Name |
 
 ★ This library provides **Passkey** (authentication) and **OTP** (identity verification, optionally authentication).
 
 These are independent primitives. Apps decide how to combine them:
 
-| Flow                        | Description                                                                 | Use case                                                        |
-| --------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **Passkeys only**           | Passkey sign-up and sign-in, no OTP                                         | Anonymous/pseudonymous apps, maximum privacy                    |
-| **OTP only**                | OTP sign-up and sign-in, no passkeys                                        | Simple apps, Clerk-like DX                                      |
-| **Passkey → OTP**           | Passkey first, OTP to collect email later                                   | Privacy-first, email optional for communication                 |
-| **OTP → Passkey**           | OTP to verify email, then passkey (current default)                         | Most apps — verified email + passkey auth                       |
-| **OTP → Passkey (strict)**  | OTP for initial sign-up only, passkey-only after                            | High security — no OTP backdoor for existing users              |
-| **OTP while authenticated** | Verify a new email/phone, or step-up before a sensitive action              | Add/change contact info, sudo mode                              |
-| **Bring your own**          | Session core only — app verifies by its own means, then creates the session | Invite tokens, recovery codes, SSO assertions, guest-first apps |
+| Flow | Description | Use case |
+| --- | --- | --- |
+| **Passkeys only** | Passkey sign-up and sign-in, no OTP | Anonymous/pseudonymous apps, maximum privacy |
+| **OTP only** | OTP sign-up and sign-in, no passkeys | Simple apps, Clerk-like DX |
+| **Passkey → OTP** | Passkey first, OTP to collect email later | Privacy-first, email optional for communication |
+| **OTP → Passkey** | OTP to verify email, then passkey (current default) | Most apps — verified email + passkey auth |
+| **OTP → Passkey (strict)** | OTP for initial sign-up only, passkey-only after | High security — no OTP backdoor for existing users |
+| **OTP while authenticated** | Verify a new email/phone, or step-up before a sensitive action | Add/change contact info, sudo mode |
+| **Bring your own** | Session core only — app verifies by its own means, then creates the session | Invite tokens, recovery codes, SSO assertions, guest-first apps |
 
 The library provides primitives. Your app composes the flow that fits your security/UX tradeoffs.
 
@@ -120,20 +120,20 @@ The library provides primitives. Your app composes the flow that fits your secur
 
 See `CoreMethods`, `OtpMethods`, `PasskeyMethods`, and `AuthClient` types in `packages/auth/src/types.ts` for the complete API with JSDoc documentation.
 
-| Primitive                                               | What it does                          | Client |
-| ------------------------------------------------------- | ------------------------------------- | ------ |
-| `createSession({ userId })`                             | Create session for user               | ❌     |
-| `requestOtp({ identifier })`                            | Send OTP to identifier (email/phone)  | ✅     |
-| `verifyOtp({ identifier, otp })`                        | Verify OTP → `{ success }`            | ✅     |
-| `createRegistrationToken({ userId, identifier })`       | Create registration token             | ❌     |
-| `validateRegistrationToken({ token })`                  | Validate → `{ userId, identifier }`   | ❌     |
-| `generateRegistrationOptions({ registrationToken })`    | WebAuthn registration options         | ✅     |
-| `verifyRegistration({ registrationToken, credential })` | Verify + store passkey → `{ userId }` | ✅     |
-| `generateAuthenticationOptions()`                       | WebAuthn sign-in options              | ✅     |
-| `verifyAuthentication({ credential })`                  | Verify passkey → `{ userId }`         | ✅     |
-| `getSession()`                                          | Get session data                      | ❌     |
-| `signOut()`                                             | End session                           | ✅     |
-| `signOutAll()`                                          | End all sessions for user             | ❌     |
+| Primitive | What it does | Client |
+| --- | --- | --- |
+| `createSession({ userId })` | Create session for user | ❌ |
+| `requestOtp({ identifier })` | Send OTP to identifier (email/phone) | ✅ |
+| `verifyOtp({ identifier, otp })` | Verify OTP → `{ success }` | ✅ |
+| `createRegistrationToken({ userId, identifier })` | Create registration token | ❌ |
+| `validateRegistrationToken({ token })` | Validate → `{ userId, identifier }` | ❌ |
+| `generateRegistrationOptions({ registrationToken })` | WebAuthn registration options | ✅ |
+| `verifyRegistration({ registrationToken, credential })` | Verify + store passkey → `{ userId }` | ✅ |
+| `generateAuthenticationOptions()` | WebAuthn sign-in options | ✅ |
+| `verifyAuthentication({ credential })` | Verify passkey → `{ userId }` | ✅ |
+| `getSession()` | Get session data | ❌ |
+| `signOut()` | End session | ✅ |
+| `signOutAll()` | End all sessions for user | ❌ |
 
 **Client column:** ✅ = exposed via `makeAuthClient` / callable from browser. ❌ = server-side only.
 
@@ -273,10 +273,10 @@ For apps using WebAuthn PRF for key derivation (E2EE):
 
 **E2EE vs regular apps:**
 
-| App type    | Auth          | Identity/verification   | Why                                                              |
-| ----------- | ------------- | ----------------------- | ---------------------------------------------------------------- |
-| **E2EE**    | Passkey only  | OTP verify (no session) | OTP can't derive KEK — an OTP session without the key is useless |
-| **Regular** | Passkey + OTP | OTP does both           | Convenience — either method works on any device                  |
+| App type | Auth | Identity/verification | Why |
+| --- | --- | --- | --- |
+| **E2EE** | Passkey only | OTP verify (no session) | OTP can't derive KEK — an OTP session without the key is useless |
+| **Regular** | Passkey + OTP | OTP does both | Convenience — either method works on any device |
 
 For E2EE, use **passkey → OTP** or **OTP → passkey (strict)** patterns:
 
@@ -309,12 +309,12 @@ Everything is explicit, never implicit. Config is grouped by feature (`session`,
 
 > **Decided (2026-07-16):** Four layers, each with one rule. Users enter at any layer; each layer produces the input type of the layer above.
 
-| Layer      | What it is                                  | Rule                                                                     | Examples                                                                               |
-| ---------- | ------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| Contracts  | The adapter interfaces — the product        | Semantic, never mechanical; core runs on anything satisfying them        | `OtpStorage`, `SessionCodec`, `SessionTransportAdapter`                                |
-| Mechanisms | Logic shipped as adapters, environment-free | No framework imports, ever                                               | `sessionTransportCookie`, `makeHmacCodec`, memory storages, `makeOtpStorage` (planned) |
-| Bindings   | Environment glue                            | Zero logic — an if-statement means the logic moves down into a mechanism | `sessionTransportTanstack`, `sessionTransportNextjs`                                   |
-| Configs    | Pre-composed config values                  | Data only — composition plus literals, no functions of their own         | `sessionCookieDefaults`; planned bundles like `placeholderOtp`                         |
+| Layer | What it is | Rule | Examples |
+| --- | --- | --- | --- |
+| Contracts | The adapter interfaces — the product | Semantic, never mechanical; core runs on anything satisfying them | `OtpStorage`, `SessionCodec`, `SessionTransportAdapter` |
+| Mechanisms | Logic shipped as adapters, environment-free | No framework imports, ever | `sessionTransportCookie`, `makeHmacCodec`, memory storages, `makeOtpStorage` (planned) |
+| Bindings | Environment glue | Zero logic — an if-statement means the logic moves down into a mechanism | `sessionTransportTanstack`, `sessionTransportNextjs` |
+| Configs | Pre-composed config values | Data only — composition plus literals, no functions of their own | `sessionCookieDefaults`; planned bundles like `placeholderOtp` |
 
 ### Framework-agnostic by design
 
@@ -440,13 +440,13 @@ See `AuthClient` type in `packages/auth/src/types.ts` for the full interface. Th
 
 The auth system has five distinct TTLs, each serving a different purpose:
 
-| TTL           | Config                         | Purpose                                      | Typical value                   | Sliding refresh |
-| ------------- | ------------------------------ | -------------------------------------------- | ------------------------------- | --------------- |
-| Token TTL     | `sessionHmac({ ttl })`         | Revocation window — how long before DB check | 10 min                          | No              |
-| Session TTL   | `session: { ttl }`             | Inactivity timeout — when to sign out user   | 30 days or `Infinity` (forever) | Yes             |
-| Cookie TTL    | `sessionCookieDefaults.maxAge` | Browser cookie lifetime — auto-deleted after | 400 days                        | Yes             |
-| OTP TTL       | `otpTransportConsole({ ttl })` | OTP validity — how long to enter the otp     | 10 min                          | No              |
-| Challenge TTL | `webAuthn: { challengeTtl }`   | WebAuthn challenge validity                  | 5 min                           | No              |
+| TTL | Config | Purpose | Typical value | Sliding refresh |
+| --- | --- | --- | --- | --- |
+| Token TTL | `sessionHmac({ ttl })` | Revocation window — how long before DB check | 10 min | No |
+| Session TTL | `session: { ttl }` | Inactivity timeout — when to sign out user | 30 days or `Infinity` (forever) | Yes |
+| Cookie TTL | `sessionCookieDefaults.maxAge` | Browser cookie lifetime — auto-deleted after | 400 days | Yes |
+| OTP TTL | `otpTransportConsole({ ttl })` | OTP validity — how long to enter the otp | 10 min | No |
+| Challenge TTL | `webAuthn: { challengeTtl }` | WebAuthn challenge validity | 5 min | No |
 
 **Token TTL vs Session TTL:**
 
@@ -455,12 +455,12 @@ The auth system has five distinct TTLs, each serving a different purpose:
 
 **Sliding refresh:**
 
-|                    | Slides? | Why                                                                                                                       |
-| ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Token `tokenExp`   | No      | Must be fixed to guarantee DB checks every tokenTtl. Sliding would let active users avoid DB forever → revocation broken. |
-| Token `sessionExp` | Yes     | Slides every request to keep active users signed in. Checked before `tokenExp`.                                           |
-| DB `expiresAt`     | Yes     | Updated on DB fallback. Fallback value if token lost.                                                                     |
-| Cookie `maxAge`    | Yes     | Server mints new cookie each response. Keeps cookie alive for active users.                                               |
+|  | Slides? | Why |
+| --- | --- | --- |
+| Token `tokenExp` | No | Must be fixed to guarantee DB checks every tokenTtl. Sliding would let active users avoid DB forever → revocation broken. |
+| Token `sessionExp` | Yes | Slides every request to keep active users signed in. Checked before `tokenExp`. |
+| DB `expiresAt` | Yes | Updated on DB fallback. Fallback value if token lost. |
+| Cookie `maxAge` | Yes | Server mints new cookie each response. Keeps cookie alive for active users. |
 
 **`getSession()` flow:**
 

@@ -12,17 +12,17 @@ The boundary is credible when one small public API can represent the session mec
 
 ## Fixed boundaries
 
-| Decision               | Meaning                                                                                                                                                                                                        |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Product structure      | `makeAuth` receives one mandatory session implementation. OTP and passkeys are optional authentication strategies. This work covers only the session boundary.                                                 |
-| Users                  | The application owns users and gives session creation an opaque, application-authorized `userId`. There is no user adapter.                                                                                    |
-| Authentication         | An installed strategy resolves an application user and core establishes that user's session. Session-only auth exposes direct creation for bespoke authentication.                                             |
-| Session ownership      | The session implementation owns credential shape, persistence, lifetime policy, and its useful lifecycle and management capabilities.                                                                          |
-| Dependency injection   | Configuration is complete and explicit. There are no defaults or optional dependencies. Convenience factories may produce complete configurations.                                                             |
-| Transport              | Core does not read or write cookies, headers, local storage, requests, or responses. Bindings move credential values between core and an environment.                                                          |
-| Session reads          | Checking a session is repeatable and read-only. Renewal and persistence updates are explicit, separate behavior.                                                                                               |
+| Decision | Meaning |
+| --- | --- |
+| Product structure | `makeAuth` receives one mandatory session implementation. OTP and passkeys are optional authentication strategies. This work covers only the session boundary. |
+| Users | The application owns users and gives session creation an opaque, application-authorized `userId`. There is no user adapter. |
+| Authentication | An installed strategy resolves an application user and core establishes that user's session. Session-only auth exposes direct creation for bespoke authentication. |
+| Session ownership | The session implementation owns credential shape, persistence, lifetime policy, and its useful lifecycle and management capabilities. |
+| Dependency injection | Configuration is complete and explicit. There are no defaults or optional dependencies. Convenience factories may produce complete configurations. |
+| Transport | Core does not read or write cookies, headers, local storage, requests, or responses. Bindings move credential values between core and an environment. |
+| Session reads | Checking a session is repeatable and read-only. Renewal and persistence updates are explicit, separate behavior. |
 | Custom implementations | Core does not try to make an incorrectly written custom session implementation safe. We make shipped mechanisms correct and support custom authors with contracts, documentation, examples, tests, and skills. |
-| Target support         | The API must permit SSR, CSR, RSC, mobile, conventional servers, and Convex without core changes. We do not need to ship every binding on day one.                                                             |
+| Target support | The API must permit SSR, CSR, RSC, mobile, conventional servers, and Convex without core changes. We do not need to ship every binding on day one. |
 
 Legacy code, `SPEC.md`, the main spike, and the nested spike are evidence. None is a contract that the final design must preserve.
 
@@ -114,14 +114,14 @@ This mechanism has no persisted positive session authority and does not inherent
 
 The code in this directory tries one lifecycle against two access representations over the same opaque authority shape:
 
-| Concern          | Short-lived signed access                   | Direct opaque access                                     |
-| ---------------- | ------------------------------------------- | -------------------------------------------------------- |
-| Authority        | Opaque credential retained as refresh       | Opaque credential presented as access                    |
-| Validate         | Verify the signed session snapshot          | Resolve current state, optionally through a server cache |
-| Refresh          | Resolve authority and issue a new snapshot  | Update server-side lifetime and retain the credential    |
-| Revoke           | Delete the opaque authority                 | Delete the opaque authority                              |
-| Read capability  | No persistence needed for access validation | Persistence read required                                |
-| Write capability | Required for create, refresh, and revoke    | Required for create, refresh, and revoke                 |
+| Concern | Short-lived signed access | Direct opaque access |
+| --- | --- | --- |
+| Authority | Opaque credential retained as refresh | Opaque credential presented as access |
+| Validate | Verify the signed session snapshot | Resolve current state, optionally through a server cache |
+| Refresh | Resolve authority and issue a new snapshot | Update server-side lifetime and retain the credential |
+| Revoke | Delete the opaque authority | Delete the opaque authority |
+| Read capability | No persistence needed for access validation | Persistence read required |
+| Write capability | Required for create, refresh, and revoke | Required for create, refresh, and revoke |
 
 The experiment established that:
 
@@ -179,11 +179,11 @@ The ownership rule is:
 
 These questions constrain each other. The usage API now contains candidate answers for all four boundaries.
 
-| Question                                     | Current direction                                                                                                                                                                                                                          |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| What is the minimal internal session port?   | `establish` and read-only `resolve`. The four mechanism probes require no third universal operation.                                                                                                                                       |
-| How are public capabilities projected?       | A separate generic capability object is preserved in `auth.session`. Session-only auth adds public creation, while installed strategies reserve establishment for core.                                                                    |
-| What are session credentials?                | There is no universal credential shape. Establishment and capability results preserve implementation-defined values, while resolution closes over the presented session in the current candidate.                                          |
+| Question | Current direction |
+| --- | --- |
+| What is the minimal internal session port? | `establish` and read-only `resolve`. The four mechanism probes require no third universal operation. |
+| How are public capabilities projected? | A separate generic capability object is preserved in `auth.session`. Session-only auth adds public creation, while installed strategies reserve establishment for core. |
+| What are session credentials? | There is no universal credential shape. Establishment and capability results preserve implementation-defined values, while resolution closes over the presented session in the current candidate. |
 | How do invocation-scoped capabilities enter? | A binding closes over context and presented credentials, then constructs either a resolve-only `SessionReader` for a read boundary or the full `SessionAdapter` for a write boundary. Public auth operations receive no framework context. |
 
 Lifetime and refresh policy belong to the session implementation. Their exact behavior and configuration remain parked for the shipped mechanism design rather than the kernel contract.
@@ -198,15 +198,15 @@ Framework compatibility normally tests a binding, not the `SessionAdapter` itsel
 - A binding moves credential values between that API and an environment.
 - Convex may pressure both boundaries because its persistence capabilities are created per invocation.
 
-| Target              | Why it was selected                                                                                                                                                 | Boundary stressed               | Role      |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | --------- |
-| Vanilla Node or Bun | Framework-free floor. Proves the design does not depend on a full-stack framework, a particular router, or framework-owned request context.                         | Binding                         | Primary   |
-| TanStack Start      | Representative conventional full-stack case with SSR, CSR, server functions, and server routes. Ensures the ordinary integration remains ergonomic.                 | Binding                         | Primary   |
-| Next.js App Router  | Constrained mixed environment: RSC can participate in session reads while credential writes require a write-capable server boundary.                                | Binding and lifecycle           | Primary   |
-| Convex              | Queries and mutations have different capabilities and receive database facilities per invocation. This is the strongest test of read/write separation and DI.       | Adapter, binding, and lifecycle | Primary   |
-| Expo                | Native clients retain and present credentials without relying on browser cookie behavior.                                                                           | Credential boundary and binding | Primary   |
-| Electron            | Desktop clients add protected OS storage plus a privileged main-process boundary that must not leak renewable credentials into the renderer.                        | Credential boundary and binding | Primary   |
-| SolidStart          | A non-React full-stack confirmation that the design has not accidentally absorbed React, Next.js, or TanStack assumptions. It adds less new architectural pressure. | Binding                         | Secondary |
+| Target | Why it was selected | Boundary stressed | Role |
+| --- | --- | --- | --- |
+| Vanilla Node or Bun | Framework-free floor. Proves the design does not depend on a full-stack framework, a particular router, or framework-owned request context. | Binding | Primary |
+| TanStack Start | Representative conventional full-stack case with SSR, CSR, server functions, and server routes. Ensures the ordinary integration remains ergonomic. | Binding | Primary |
+| Next.js App Router | Constrained mixed environment: RSC can participate in session reads while credential writes require a write-capable server boundary. | Binding and lifecycle | Primary |
+| Convex | Queries and mutations have different capabilities and receive database facilities per invocation. This is the strongest test of read/write separation and DI. | Adapter, binding, and lifecycle | Primary |
+| Expo | Native clients retain and present credentials without relying on browser cookie behavior. | Credential boundary and binding | Primary |
+| Electron | Desktop clients add protected OS storage plus a privileged main-process boundary that must not leak renewable credentials into the renderer. | Credential boundary and binding | Primary |
+| SolidStart | A non-React full-stack confirmation that the design has not accidentally absorbed React, Next.js, or TanStack assumptions. It adds less new architectural pressure. | Binding | Secondary |
 
 Convex receives a separate audience-bound identity token derived from the authoritative session. An opaque session handle is never passed to Convex as though it were a JWT.
 

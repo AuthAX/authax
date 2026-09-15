@@ -30,13 +30,13 @@ expectType<HeaderSessionResult>(successful(headerAuth.strategies.otp.authenticat
 
 ## Comparison
 
-| Candidate                | Exact distinct session results | Strategy authoring                                        | Runtime projection                          | Current assessment                                           |
-| ------------------------ | ------------------------------ | --------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------ |
-| One shot kernel map      | Yes                            | One callback returning the final namespace map            | Assertion free direct construction          | Current leader                                               |
-| Namespace factory        | Yes                            | Generic function returning its named namespace            | Assertion free object merge                 | Useful builder helper                                        |
-| Operation descriptors    | Yes                            | Plain object plus operation helpers                       | Requires an assertion or unchecked overload | Type result only                                             |
-| `defineStrategy`         | Yes                            | Explicit type template using `this` plus an opaque helper | Assertion free direct mount                 | Too much type ceremony                                       |
-| Universal session result | No distinct results by design  | Plain mounted namespace                                   | Assertion free direct mount                 | Rejected unless session design independently converges on it |
+| Candidate | Exact distinct session results | Strategy authoring | Runtime projection | Current assessment |
+| --- | --- | --- | --- | --- |
+| One shot kernel map | Yes | One callback returning the final namespace map | Assertion free direct construction | Current leader |
+| Namespace factory | Yes | Generic function returning its named namespace | Assertion free object merge | Useful builder helper |
+| Operation descriptors | Yes | Plain object plus operation helpers | Requires an assertion or unchecked overload | Type result only |
+| `defineStrategy` | Yes | Explicit type template using `this` plus an opaque helper | Assertion free direct mount | Too much type ceremony |
+| Universal session result | No distinct results by design | Plain mounted namespace | Assertion free direct mount | Rejected unless session design independently converges on it |
 
 ## Namespace factory
 

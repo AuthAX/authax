@@ -1,1 +1,11 @@
-{}
+{
+  "overrides": [
+    {
+      "files": "*.md",
+      "excludeFiles": "LICENSE.md",
+      "options": {
+        "proseWrap": "never"
+      }
+    }
+  ]
+}

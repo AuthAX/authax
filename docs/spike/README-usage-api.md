@@ -90,25 +90,25 @@ Core contains no debug flag because core swallows no causes. A shipped mechanism
 
 Nothing in this directory is exported by the current package entry point.
 
-| Location                                                       | Role                                                                                    |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| [`contracts.ts`](./contracts.ts)                               | Candidate public contract, construction plus session split plus shipped strategy shapes |
-| [`make-auth-sandbox.ts`](./make-auth-sandbox.ts)               | Runtime `makeAuth` candidate, no mechanism branches                                     |
-| [`strategy-session-sandbox.ts`](./strategy-session-sandbox.ts) | Runtime orchestration proof, OTP and passkey strategies through the real constructor    |
-| [`kernel-map-playground.ts`](./kernel-map-playground.ts)       | Consumer sketch, bundle tiers, a third party OIDC namespace, inert fixtures             |
-| [`playground.ts`](./playground.ts)                             | Request handler plumbing sketch, token in, credential values out                        |
-| [`contracts-typecheck.ts`](./contracts-typecheck.ts)           | Compile time proofs for construction, projection, and the call convention               |
-| [`strategy-composition/`](./strategy-composition/)             | Evidence for why this construction won, retained until promotion                        |
+| Location | Role |
+| --- | --- |
+| [`contracts.ts`](./contracts.ts) | Candidate public contract, construction plus session split plus shipped strategy shapes |
+| [`make-auth-sandbox.ts`](./make-auth-sandbox.ts) | Runtime `makeAuth` candidate, no mechanism branches |
+| [`strategy-session-sandbox.ts`](./strategy-session-sandbox.ts) | Runtime orchestration proof, OTP and passkey strategies through the real constructor |
+| [`kernel-map-playground.ts`](./kernel-map-playground.ts) | Consumer sketch, bundle tiers, a third party OIDC namespace, inert fixtures |
+| [`playground.ts`](./playground.ts) | Request handler plumbing sketch, token in, credential values out |
+| [`contracts-typecheck.ts`](./contracts-typecheck.ts) | Compile time proofs for construction, projection, and the call convention |
+| [`strategy-composition/`](./strategy-composition/) | Evidence for why this construction won, retained until promotion |
 
 The intended library has more than one public layer.
 
-| Layer                           | Candidate library exports                                           | Ownership                                                                                                 |
-| ------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Microkernel API                 | `makeAuth` and its contract types                                   | Composition, authenticated-user to session transition, current-user scoping, and public projection        |
+| Layer | Candidate library exports | Ownership |
+| --- | --- | --- |
+| Microkernel API | `makeAuth` and its contract types | Composition, authenticated-user to session transition, current-user scoping, and public projection |
 | Shipped mechanisms and adapters | Environment-free factories producing session and strategy contracts | Token mechanics, OTP behavior, passkey behavior, persistence protocols, and other reusable auth machinery |
-| Framework bindings              | Entry points that move request context and credential values        | Environment glue only                                                                                     |
-| Microkernel internals           | None                                                                | Strategy kernel construction and session projection                                                       |
-| Application code                | None                                                                | User lookup, application policy, concrete storage and delivery connections, and final composition         |
+| Framework bindings | Entry points that move request context and credential values | Environment glue only |
+| Microkernel internals | None | Strategy kernel construction and session projection |
+| Application code | None | User lookup, application policy, concrete storage and delivery connections, and final composition |
 
 ## Core and strategy ownership
 

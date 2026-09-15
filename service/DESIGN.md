@@ -8,13 +8,13 @@ The AuthAX hosted service is an optional operational layer for applications buil
 
 ## Product model
 
-| Part                  | Role                                                                                            |
-| --------------------- | ----------------------------------------------------------------------------------------------- |
-| AuthAX library        | Runs authentication in the application                                                          |
-| Application database  | Owns users and remains the source of truth                                                      |
-| Console delivery      | Lets an agent verify an OTP flow locally without an AuthAX account                              |
+| Part | Role |
+| --- | --- |
+| AuthAX library | Runs authentication in the application |
+| Application database | Owns users and remains the source of truth |
+| Console delivery | Lets an agent verify an OTP flow locally without an AuthAX account |
 | AuthAX hosted service | Provides optional operational capabilities without becoming the authority for application users |
-| Customer server       | Performs every authoritative mutation of application users                                      |
+| Customer server | Performs every authoritative mutation of application users |
 
 ## Product promise
 
@@ -36,12 +36,12 @@ The AuthAX hosted service is an optional operational layer for applications buil
 
 ### Experience
 
-| Situation                                   | Delivery                  | AuthAX account | Human action                                               |
-| ------------------------------------------- | ------------------------- | -------------- | ---------------------------------------------------------- |
-| Local verification by the developer         | Console                   | Not required   | None                                                       |
-| Local or tunneled demo used by other people | AuthAX email delivery     | Required       | Confirm GitHub OAuth once                                  |
-| Hosted application using AuthAX delivery    | AuthAX email delivery     | Required       | Add the sending key to the hosting provider secret storage |
-| Application using its own delivery provider | Customer supplied adapter | Not required   | Configure the chosen provider                              |
+| Situation | Delivery | AuthAX account | Human action |
+| --- | --- | --- | --- |
+| Local verification by the developer | Console | Not required | None |
+| Local or tunneled demo used by other people | AuthAX email delivery | Required | Confirm GitHub OAuth once |
+| Hosted application using AuthAX delivery | AuthAX email delivery | Required | Add the sending key to the hosting provider secret storage |
+| Application using its own delivery provider | Customer supplied adapter | Not required | Configure the chosen provider |
 
 ### Activation flow
 
@@ -65,57 +65,57 @@ The AuthAX hosted service is an optional operational layer for applications buil
 
 ### Hosted capabilities
 
-| Capability             | Version one behavior                                                                      |
-| ---------------------- | ----------------------------------------------------------------------------------------- |
-| Account access         | Authenticate the developer through GitHub OAuth                                           |
-| Application management | Create and select applications owned by the account                                       |
-| Sending key management | Issue, list, and revoke application sending keys                                          |
-| OTP email delivery     | Send only the fixed AuthAX OTP email message                                              |
-| Enforcement            | Apply limits across every application and key owned by the GitHub identity                |
-| Account suspension     | Stop delivery and revoke the usefulness of every sending key owned by the blocked account |
+| Capability | Version one behavior |
+| --- | --- |
+| Account access | Authenticate the developer through GitHub OAuth |
+| Application management | Create and select applications owned by the account |
+| Sending key management | Issue, list, and revoke application sending keys |
+| OTP email delivery | Send only the fixed AuthAX OTP email message |
+| Enforcement | Apply limits across every application and key owned by the GitHub identity |
+| Account suspension | Stop delivery and revoke the usefulness of every sending key owned by the blocked account |
 
 ### Service records
 
-| Record           | Purpose                                                                 | Authority            |
-| ---------------- | ----------------------------------------------------------------------- | -------------------- |
-| Account          | Represents the developer who authenticated with GitHub                  | AuthAX               |
-| Application      | Groups hosted capabilities and credentials for one customer application | AuthAX               |
-| Sending key      | Authenticates an application to the OTP email delivery service          | AuthAX               |
-| Sending activity | Supports limits, abuse response, and operational diagnosis              | AuthAX               |
-| Application user | Not stored as an authoritative record in version one                    | Customer application |
+| Record | Purpose | Authority |
+| --- | --- | --- |
+| Account | Represents the developer who authenticated with GitHub | AuthAX |
+| Application | Groups hosted capabilities and credentials for one customer application | AuthAX |
+| Sending key | Authenticates an application to the OTP email delivery service | AuthAX |
+| Sending activity | Supports limits, abuse response, and operational diagnosis | AuthAX |
+| Application user | Not stored as an authoritative record in version one | Customer application |
 
 ### Initial sending policy
 
-| Restriction                 | Limit                                                                                                | Scope                         |
-| --------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------- |
-| GitHub account age          | At least six months                                                                                  | Per GitHub identity           |
-| Email addresses             | 250 distinct email addresses¹                                                                        | Per GitHub identity, lifetime |
-| Email messages              | 1,000 OTP email messages                                                                             | Per GitHub identity, per day  |
-| Key expiry                  | None                                                                                                 | Per sending key               |
-| Email message type          | OTP only                                                                                             | Per email message             |
-| Email message customization | Fixed sender email address, subject, and template with no caller controlled copy, links, or branding | Per email message             |
+| Restriction | Limit | Scope |
+| --- | --- | --- |
+| GitHub account age | At least six months | Per GitHub identity |
+| Email addresses | 250 distinct email addresses¹ | Per GitHub identity, lifetime |
+| Email messages | 1,000 OTP email messages | Per GitHub identity, per day |
+| Key expiry | None | Per sending key |
+| Email message type | OTP only | Per email message |
+| Email message customization | Fixed sender email address, subject, and template with no caller controlled copy, links, or branding | Per email message |
 
 ¹ Email addresses are lowercased before comparison. Suffixes and periods are preserved. `user+one@gmail.com`, `user@gmail.com`, and `u.ser@gmail.com` are distinct email addresses.
 
 ### Accountability and abuse controls
 
-| Control                | Effect                                                            |
-| ---------------------- | ----------------------------------------------------------------- |
-| GitHub OAuth           | Establishes a durable principal rather than a real world identity |
-| GitHub account age     | Raises the cost of replacing a blocked principal                  |
-| Identity scoped limits | Prevents new applications and keys from resetting sending limits  |
-| Fixed OTP template     | Removes caller controlled content used for spam and phishing      |
-| Account suspension     | Blocks the principal and every sending key it owns                |
-| Key revocation         | Stops a compromised or retired application credential             |
+| Control | Effect |
+| --- | --- |
+| GitHub OAuth | Establishes a durable principal rather than a real world identity |
+| GitHub account age | Raises the cost of replacing a blocked principal |
+| Identity scoped limits | Prevents new applications and keys from resetting sending limits |
+| Fixed OTP template | Removes caller controlled content used for spam and phishing |
+| Account suspension | Blocks the principal and every sending key it owns |
+| Key revocation | Stops a compromised or retired application credential |
 
 ### Remaining risks
 
-| Risk                              | Impact                                                                |
-| --------------------------------- | --------------------------------------------------------------------- |
-| Unwanted OTP email messages       | Recipients may form a negative opinion of AuthAX                      |
-| Sending cost                      | AuthAX pays for accepted email messages                               |
-| Invalid recipients and spam traps | Providers may reduce or block delivery from AuthAX                    |
-| Compromised GitHub accounts       | An attacker may inherit the eligibility and reputation of the account |
+| Risk | Impact |
+| --- | --- |
+| Unwanted OTP email messages | Recipients may form a negative opinion of AuthAX |
+| Sending cost | AuthAX pays for accepted email messages |
+| Invalid recipients and spam traps | Providers may reduce or block delivery from AuthAX |
+| Compromised GitHub accounts | An attacker may inherit the eligibility and reputation of the account |
 
 ### Not in version one
 
@@ -140,25 +140,25 @@ The AuthAX hosted service is an optional operational layer for applications buil
 
 ### Read flow
 
-| Step | Behavior                                                                                             |
-| ---- | ---------------------------------------------------------------------------------------------------- |
-| 1    | The application reports explicit events and selected user information to AuthAX                      |
-| 2    | AuthAX builds a dashboard projection from the reported information                                   |
-| 3    | Operators inspect users, authentication activity, and application supplied properties                |
-| 4    | The application database remains authoritative when the projection is missing, stale, or unavailable |
+| Step | Behavior |
+| --- | --- |
+| 1 | The application reports explicit events and selected user information to AuthAX |
+| 2 | AuthAX builds a dashboard projection from the reported information |
+| 3 | Operators inspect users, authentication activity, and application supplied properties |
+| 4 | The application database remains authoritative when the projection is missing, stale, or unavailable |
 
 ### Mutation flow
 
-| Step | Behavior                                                                                                     |
-| ---- | ------------------------------------------------------------------------------------------------------------ |
-| 1    | The developer registers a protected application endpoint for a predefined operation such as disabling a user |
-| 2    | AuthAX enables the corresponding dashboard control                                                           |
-| 3    | An operator invokes the control for an application user                                                      |
-| 4    | AuthAX sends a signed HTTP request with the predefined payload to the registered endpoint                    |
-| 5    | The customer server validates the request and decides whether to perform the mutation                        |
-| 6    | The customer server mutates its own database                                                                 |
-| 7    | The application confirms the result and reports the resulting state to AuthAX                                |
-| 8    | AuthAX updates the dashboard projection                                                                      |
+| Step | Behavior |
+| --- | --- |
+| 1 | The developer registers a protected application endpoint for a predefined operation such as disabling a user |
+| 2 | AuthAX enables the corresponding dashboard control |
+| 3 | An operator invokes the control for an application user |
+| 4 | AuthAX sends a signed HTTP request with the predefined payload to the registered endpoint |
+| 5 | The customer server validates the request and decides whether to perform the mutation |
+| 6 | The customer server mutates its own database |
+| 7 | The application confirms the result and reports the resulting state to AuthAX |
+| 8 | AuthAX updates the dashboard projection |
 
 ### Invariants
 
@@ -171,13 +171,13 @@ The AuthAX hosted service is an optional operational layer for applications buil
 
 ## Open product decisions
 
-| Decision               | Question                                                                       |
-| ---------------------- | ------------------------------------------------------------------------------ |
-| Repository and license | Which hosted components are public, and does AuthAX promise self hosting       |
-| Activation handoff     | How does browser authorization return the sending key to the agent safely      |
-| Application ownership  | Does version one support one application or multiple applications per account  |
-| Key lifecycle          | Which rotation and replacement operations are required beyond issue and revoke |
-| Deployment setup       | Which hosting providers can an agent configure directly                        |
-| Stored sending data    | What recipient and delivery data is retained, in what form, and for how long   |
-| Dashboard reporting    | Which data is explicit, optional, and safe to copy into the hosted projection  |
-| Dashboard commands     | How requests are authenticated, retried, made idempotent, and reconciled       |
+| Decision | Question |
+| --- | --- |
+| Repository and license | Which hosted components are public, and does AuthAX promise self hosting |
+| Activation handoff | How does browser authorization return the sending key to the agent safely |
+| Application ownership | Does version one support one application or multiple applications per account |
+| Key lifecycle | Which rotation and replacement operations are required beyond issue and revoke |
+| Deployment setup | Which hosting providers can an agent configure directly |
+| Stored sending data | What recipient and delivery data is retained, in what form, and for how long |
+| Dashboard reporting | Which data is explicit, optional, and safe to copy into the hosted projection |
+| Dashboard commands | How requests are authenticated, retried, made idempotent, and reconciled |

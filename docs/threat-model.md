@@ -10,14 +10,14 @@ Who owns each defense on the otp surface: library, adapters, app/infra, or the (
 
 ## Vector map
 
-| #   | Vector                   | Attack                                   | State that decides it                  | Owner                              | Defense                                                                                                                          |
-| --- | ------------------------ | ---------------------------------------- | -------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Resend flooding          | Hammer `requestOtp` for one identifier   | The live otp record                    | **Library** (mechanism)            | Per-identifier cooldown in `makeOtpStorage` — atomic conditional put; `requestOtp` fails `rate_limited`, nothing sent            |
-| 2   | Inbox bombing            | Sustained sends to one victim over hours | Per-identifier counters                | **App/infra**; service when used   | Hourly/daily caps. The library ships none — counter state is out of scope                                                        |
-| 3   | Mass sending, cost abuse | Scripted sends to many identifiers       | Request metadata (IP), global counters | **App/infra**                      | Gate before `requestOtp` — the server function holds the IP (TanStack `getRequestIP`, Next.js `headers()`); captcha/WAF for bots |
-| 4   | Reputation burn          | Sends to spam traps and dead addresses   | Cross-app sending outcomes (bounces)   | **Sending service**; else your ESP | Service: per-recipient and per-key caps, bounce handling. Self-hosted: your domain, your risk                                    |
-| 5   | Otp brute force          | Guess the otp at `verifyOtp`             | The otp record                         | **Library** (decided 2026-07-16)   | One attempt per otp — a wrong guess consumes it; short TTL; single use                                                           |
-| 6   | Otp phishing             | Trick the user into relaying the otp     | None — human factor                    | **App** (flow choice)              | Passkeys for everyday sign-in; strict mode closes the otp backdoor for existing users                                            |
+| # | Vector | Attack | State that decides it | Owner | Defense |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Resend flooding | Hammer `requestOtp` for one identifier | The live otp record | **Library** (mechanism) | Per-identifier cooldown in `makeOtpStorage` — atomic conditional put; `requestOtp` fails `rate_limited`, nothing sent |
+| 2 | Inbox bombing | Sustained sends to one victim over hours | Per-identifier counters | **App/infra**; service when used | Hourly/daily caps. The library ships none — counter state is out of scope |
+| 3 | Mass sending, cost abuse | Scripted sends to many identifiers | Request metadata (IP), global counters | **App/infra** | Gate before `requestOtp` — the server function holds the IP (TanStack `getRequestIP`, Next.js `headers()`); captcha/WAF for bots |
+| 4 | Reputation burn | Sends to spam traps and dead addresses | Cross-app sending outcomes (bounces) | **Sending service**; else your ESP | Service: per-recipient and per-key caps, bounce handling. Self-hosted: your domain, your risk |
+| 5 | Otp brute force | Guess the otp at `verifyOtp` | The otp record | **Library** (decided 2026-07-16) | One attempt per otp — a wrong guess consumes it; short TTL; single use |
+| 6 | Otp phishing | Trick the user into relaying the otp | None — human factor | **App** (flow choice) | Passkeys for everyday sign-in; strict mode closes the otp backdoor for existing users |
 
 Rows 1 and 5 are the library's complete obligation — everything its own state can enforce atomically. Rows 2–4 need state the library never sees (counters, requests, cross-app outcomes); pulling them in would mean importing new state classes, which is how nano scope dies.
 
@@ -25,13 +25,13 @@ Rows 1 and 5 are the library's complete obligation — everything its own state 
 
 The sending service is optional and does not exist yet. The map must be sound without it:
 
-| Defense       | Dev (console) | Self-hosted (own Resend/SendGrid) | With sending service                                                                    |
-| ------------- | ------------- | --------------------------------- | --------------------------------------------------------------------------------------- |
-| 1 Cooldown    | ✓ library     | ✓ library                         | ✓ library (+ service, per recipient)                                                    |
-| 2 Caps        | —             | app/infra                         | ✓ service, per recipient                                                                |
-| 3 IP/bots     | —             | app/infra                         | app/infra — unchanged; the service only ever sees your server's IP, never your callers' |
-| 4 Reputation  | n/a           | your domain, your ESP account     | ✓ service (shared domain)                                                               |
-| 5 Brute force | ✓ library     | ✓ library                         | ✓ library                                                                               |
+| Defense | Dev (console) | Self-hosted (own Resend/SendGrid) | With sending service |
+| --- | --- | --- | --- |
+| 1 Cooldown | ✓ library | ✓ library | ✓ library (+ service, per recipient) |
+| 2 Caps | — | app/infra | ✓ service, per recipient |
+| 3 IP/bots | — | app/infra | app/infra — unchanged; the service only ever sees your server's IP, never your callers' |
+| 4 Reputation | n/a | your domain, your ESP account | ✓ service (shared domain) |
+| 5 Brute force | ✓ library | ✓ library | ✓ library |
 
 Self-hosted posture = library (1, 5) + app/infra (2, 3) + owning your ESP risk (4). The service moves 2 and 4 service-side; 3 always stays with the app.
 

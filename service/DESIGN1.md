@@ -16,12 +16,12 @@ The caller never controls email content. The template is fixed, the OTP must mat
 
 All limits are public (see Public by design). Each guard has exactly one job: the recipient set bounds reach, the per-key rate bounds volume, and the global ceiling bounds cost.
 
-| Limit                                 | Activated                            | Claimed |
-| ------------------------------------- | ------------------------------------ | ------- |
-| Recipient set (lifetime, append-only) | the pin                              | 100     |
-| Sends per key per day                 | 100                                  | 100     |
-| Claimed keys per verified inbox       | —                                    | 5       |
-| Key expiry                            | 7 days unactivated, 30 days inactive | none    |
+| Limit | Activated | Claimed |
+| --- | --- | --- |
+| Recipient set (lifetime, append-only) | the pin | 100 |
+| Sends per key per day | 100 | 100 |
+| Claimed keys per verified inbox | — | 5 |
+| Key expiry | 7 days unactivated, 30 days inactive | none |
 
 The global ceiling is a monthly dollar budget (about $50), enforced as a daily slice across all keys. Tripping it is an incident to investigate, not normal contention.
 

@@ -117,23 +117,23 @@ Core contains no debug flag because core swallows no causes. A shipped mechanism
 
 ## Current files
 
-| Location                                                                       | Role                                                                                       |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| [`src/contracts.ts`](./src/contracts.ts)                                       | Public construction, session, OTP, and passkey contracts                                   |
-| [`src/make-auth.ts`](./src/make-auth.ts)                                       | Runtime microkernel with no mechanism branches                                             |
-| [`src/contracts-typecheck.ts`](./src/contracts-typecheck.ts)                   | Compile-time proofs for construction, projection, strategy boundaries, and exact inference |
-| [`src/session-capability-typecheck.ts`](./src/session-capability-typecheck.ts) | Compile-time proofs for capability-dependent session surfaces                              |
-| [`src/mechanisms/`](./src/mechanisms/)                                         | Environment-free session, OTP, and passkey mechanisms                                      |
+| Location | Role |
+| --- | --- |
+| [`src/contracts.ts`](./src/contracts.ts) | Public construction, session, OTP, and passkey contracts |
+| [`src/make-auth.ts`](./src/make-auth.ts) | Runtime microkernel with no mechanism branches |
+| [`src/contracts-typecheck.ts`](./src/contracts-typecheck.ts) | Compile-time proofs for construction, projection, strategy boundaries, and exact inference |
+| [`src/session-capability-typecheck.ts`](./src/session-capability-typecheck.ts) | Compile-time proofs for capability-dependent session surfaces |
+| [`src/mechanisms/`](./src/mechanisms/) | Environment-free session, OTP, and passkey mechanisms |
 
 The intended library has more than one public layer.
 
-| Layer                           | Candidate library exports                                           | Ownership                                                                                                 |
-| ------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Microkernel API                 | `makeAuth` and its contract types                                   | Composition, authenticated-user to session transition, current-user scoping, and public projection        |
+| Layer | Candidate library exports | Ownership |
+| --- | --- | --- |
+| Microkernel API | `makeAuth` and its contract types | Composition, authenticated-user to session transition, current-user scoping, and public projection |
 | Shipped mechanisms and adapters | Environment-free factories producing session and strategy contracts | Token mechanics, OTP behavior, passkey behavior, persistence protocols, and other reusable auth machinery |
-| Framework bindings              | Entry points that move request context and credential values        | Environment glue only                                                                                     |
-| Microkernel internals           | None                                                                | Strategy kernel construction and session projection                                                       |
-| Application code                | None                                                                | User lookup, application policy, concrete storage and delivery connections, and final composition         |
+| Framework bindings | Entry points that move request context and credential values | Environment glue only |
+| Microkernel internals | None | Strategy kernel construction and session projection |
+| Application code | None | User lookup, application policy, concrete storage and delivery connections, and final composition |
 
 ## Core and strategy ownership
 

@@ -145,19 +145,19 @@ The registration token is the bridge between the two strategies: it carries "ide
 
 ## Primitives
 
-| Primitive                                               | What it does                      | Client-callable |
-| ------------------------------------------------------- | --------------------------------- | --------------- |
-| `createSession({ userId })`                             | Create session for user           | no              |
-| `getSession()`                                          | Session data or null              | no              |
-| `signOut()` / `signOutAll()`                            | End current / all sessions        | yes / no        |
-| `requestOtp({ identifier })`                            | Send otp to email/phone           | yes             |
-| `verifyOtp({ identifier, otp })`                        | Verify otp (no session)           | yes             |
-| `createRegistrationToken({ userId, identifier })`       | Authorize a passkey registration  | no              |
-| `validateRegistrationToken({ token })`                  | Decode → `{ userId, identifier }` | no              |
-| `generateRegistrationOptions({ registrationToken })`    | WebAuthn registration options     | yes             |
-| `verifyRegistration({ registrationToken, credential })` | Verify + store passkey + session  | yes             |
-| `generateAuthenticationOptions()`                       | WebAuthn sign-in options          | yes             |
-| `verifyAuthentication({ credential })`                  | Verify passkey + session          | yes             |
+| Primitive | What it does | Client-callable |
+| --- | --- | --- |
+| `createSession({ userId })` | Create session for user | no |
+| `getSession()` | Session data or null | no |
+| `signOut()` / `signOutAll()` | End current / all sessions | yes / no |
+| `requestOtp({ identifier })` | Send otp to email/phone | yes |
+| `verifyOtp({ identifier, otp })` | Verify otp (no session) | yes |
+| `createRegistrationToken({ userId, identifier })` | Authorize a passkey registration | no |
+| `validateRegistrationToken({ token })` | Decode → `{ userId, identifier }` | no |
+| `generateRegistrationOptions({ registrationToken })` | WebAuthn registration options | yes |
+| `verifyRegistration({ registrationToken, credential })` | Verify + store passkey + session | yes |
+| `generateAuthenticationOptions()` | WebAuthn sign-in options | yes |
+| `verifyAuthentication({ credential })` | Verify passkey + session | yes |
 
 Every method returns a `Result` — expected failures are values (`{ success: false, error: "invalid_otp" }`), never exceptions.
 
@@ -165,16 +165,16 @@ Every method returns a `Result` — expected failures are values (`{ success: fa
 
 What each config group needs, and what we ship:
 
-| Group     | Adapter           | Contract (you implement)                           | Shipped presets                                |
-| --------- | ----------------- | -------------------------------------------------- | ---------------------------------------------- |
-| `session` | storage           | store / get / delete / deleteAll                   | `memorySessionStorage()`                       |
-| `session` | codec             | encode / decode tokens                             | `sessionHmac()`, `sessionOpaque()`             |
-| `session` | transport         | read / write the token per request                 | cookie, header, memory, `/tanstack`, `/nextjs` |
-| `otp`     | storage           | store / verify (one-time use, expiry, attempt cap) | `memoryOtpStorage()`                           |
-| `otp`     | delivery          | send(identifier, otp)                              | `otpDeliveryConsole()`; Resend planned         |
-| `passkey` | storage           | credential CRUD + counter update                   | `memoryCredentialStorage()`                    |
-| `passkey` | challenges        | short-lived challenge store                        | `memoryChallengeStorage()`                     |
-| `passkey` | registrationCodec | encode / decode registration tokens                | `registrationHmac()`                           |
+| Group | Adapter | Contract (you implement) | Shipped presets |
+| --- | --- | --- | --- |
+| `session` | storage | store / get / delete / deleteAll | `memorySessionStorage()` |
+| `session` | codec | encode / decode tokens | `sessionHmac()`, `sessionOpaque()` |
+| `session` | transport | read / write the token per request | cookie, header, memory, `/tanstack`, `/nextjs` |
+| `otp` | storage | store / verify (one-time use, expiry, attempt cap) | `memoryOtpStorage()` |
+| `otp` | delivery | send(identifier, otp) | `otpDeliveryConsole()`; Resend planned |
+| `passkey` | storage | credential CRUD + counter update | `memoryCredentialStorage()` |
+| `passkey` | challenges | short-lived challenge store | `memoryChallengeStorage()` |
+| `passkey` | registrationCodec | encode / decode registration tokens | `registrationHmac()` |
 
 Memory presets are for local dev and tests. A production adapter is a handful of functions against your own schema — the library never touches your database directly.
 
