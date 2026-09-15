@@ -13,7 +13,7 @@ The repo is public. Write for a reader who knows nothing beyond what is in the r
 
 ## Error handling
 
-- Use `invariant` from `packages/auth/src/lib.ts` for a case that cannot happen.
+- Use `invariant` from `packages/authax/src/lib.ts` for a case that cannot happen.
 - Prove the error with a test before adding a try-catch.
 
 ## Tests
@@ -26,8 +26,8 @@ The repo is public. Write for a reader who knows nothing beyond what is in the r
 
 Take any piece of content and go down this list in order. The first match is where it goes.
 
-1. `packages/auth/src/contracts.ts` and its tests: what the library does or guarantees.
-2. `packages/auth/README.md`: how to use the library.
+1. `packages/authax/src/contracts.ts` and its tests: what the library does or guarantees.
+2. `packages/authax/README.md`: how to use the library.
 3. `README.md`: why the project exists and how it differs.
 4. `AGENTS.md`: a rule every session must follow, whatever the task.
 5. `.agents/skills/*/SKILL.md`: one kind of job, loaded only when doing it.
