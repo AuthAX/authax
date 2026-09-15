@@ -1,4 +1,4 @@
-import { invariant } from "./lib";
+import { invariant, isRecord } from "./lib";
 
 /**
  * Minimal schema-based parser
@@ -7,22 +7,21 @@ import { invariant } from "./lib";
  * stripping excess properties. Throws on invalid input.
  */
 
-type Parser<T> = (v: unknown) => T;
+type Parser<T> = (input: unknown) => T;
 
 function str(): Parser<string> {
-  return (v) => {
-    if (typeof v !== "string") throw new Error("expected string");
-    return v;
+  return (input) => {
+    if (typeof input !== "string") throw new Error("expected string");
+    return input;
   };
 }
 
 function obj<T extends Record<string, Parser<unknown>>>(
   shape: T,
 ): Parser<{ [K in keyof T]: ReturnType<T[K]> }> {
-  return (v) => {
-    if (typeof v !== "object" || v === null) throw new Error("expected object");
+  return (input) => {
+    if (!isRecord(input)) throw new Error("expected object");
 
-    const input = v as Record<string, unknown>;
     const result = {} as { [K in keyof T]: ReturnType<T[K]> };
 
     for (const key in shape) {
@@ -47,31 +46,31 @@ function obj<T extends Record<string, Parser<unknown>>>(
 }
 
 function optional<T>(parser: Parser<T>): Parser<T | undefined> {
-  return (v) => (v == null ? undefined : parser(v));
+  return (input) => (input == null ? undefined : parser(input));
 }
 
 function array<T>(parser: Parser<T>): Parser<T[]> {
-  return (v) => {
-    if (!Array.isArray(v)) throw new Error("expected array");
-    return v.map(parser);
+  return (input) => {
+    if (!Array.isArray(input)) throw new Error("expected array");
+    return input.map(parser);
   };
 }
 
 function literal<const T extends string | number | boolean>(
   values: T[],
 ): Parser<T> {
-  return (v) => {
+  return (input) => {
     for (const value of values) {
-      if (v === value) return value;
+      if (input === value) return value;
     }
     throw new Error(`expected one of: ${values.join(", ")}`);
   };
 }
 
 function record(): Parser<Record<string, unknown>> {
-  return (v) => {
-    if (typeof v !== "object" || v === null) throw new Error("expected object");
-    return { ...(v as Record<string, unknown>) };
+  return (input) => {
+    if (!isRecord(input)) throw new Error("expected object");
+    return { ...input };
   };
 }
 
@@ -88,10 +87,9 @@ function tagged<
 > {
   const validTags = Object.keys(variants);
 
-  return (v) => {
-    if (typeof v !== "object" || v === null) throw new Error("expected object");
+  return (input) => {
+    if (!isRecord(input)) throw new Error("expected object");
 
-    const input = v as Record<string, unknown>;
     const tagValue = input[tag];
 
     if (typeof tagValue !== "string") {
@@ -105,7 +103,7 @@ function tagged<
       );
     }
 
-    const parsed = parser(v);
+    const parsed = parser(input);
     return { ...parsed, [tag]: tagValue } as {
       [K in keyof TVariants]: { [P in TTag]: K } & ReturnType<TVariants[K]>;
     }[keyof TVariants];

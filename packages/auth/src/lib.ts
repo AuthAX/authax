@@ -17,3 +17,8 @@ export function invariant(
 ): asserts condition {
   if (!condition) throw new Error(`Invariant violation: ${message}`);
 }
+
+/** True for any non-null object. Narrows it so keys can be read. */
+export function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
