@@ -60,7 +60,7 @@ test("verifyAdditionalRegistration rejects a mismatched user before storing the 
       rpName: "Passkey test",
       allowedOrigins: ["http://localhost:3107"],
     },
-    displayName: () => Promise.resolve("Alice"),
+    displayName: () => "Alice",
     signUp: null,
     debug: false,
   });

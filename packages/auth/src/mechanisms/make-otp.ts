@@ -20,7 +20,7 @@ export type OtpStorage = {
 
 /** OTP delivery adapter (email, SMS, console) */
 export type OtpDelivery = {
-  send: (identifier: string, otp: string) => Promise<void>;
+  send: (identifier: string, otp: string) => void | Promise<void>;
 };
 
 export type MakeOtpConfig = {

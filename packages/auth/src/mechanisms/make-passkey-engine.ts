@@ -75,13 +75,13 @@ export type MakePasskeyEngineConfig = {
   };
   webAuthn: WebAuthnConfig;
   /** Shown in the passkey picker for the registration being started */
-  displayName: (context: RegistrationContext) => Promise<string>;
+  displayName: (context: RegistrationContext) => string | Promise<string>;
   /**
    * Provisions the application user completing passkey-first sign-up and
    * returns its userId. null disables sign-up; registration then requires
    * current authority.
    */
-  signUp: (() => Promise<string>) | null;
+  signUp: (() => string | Promise<string>) | null;
   /** Log swallowed verification causes to the console (development aid) */
   debug: boolean;
 };
