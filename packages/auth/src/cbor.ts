@@ -94,7 +94,7 @@ export function decodeCbor(data: Uint8Array): CborValue {
         return map;
       }
       default:
-        throw new Error(`CBOR: unsupported major type ${majorType}`);
+        throw new Error(`CBOR: unsupported major type ${majorType.toString()}`);
     }
   }
 

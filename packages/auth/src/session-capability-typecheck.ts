@@ -116,7 +116,7 @@ type CustomCredential = {
 declare const customSession: SessionAdapter<
   CustomIdentity,
   CustomCredential,
-  {}
+  object
 >;
 declare const customProof: () => Promise<Result<AuthUser, never>>;
 

@@ -26,6 +26,7 @@
  * Queries return values directly and use null for expected absence.
  */
 export type Result<T, E extends string> =
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type -- void marks a result with no data
   | ([T] extends [void] ? { success: true } : { success: true; data: T })
   | ([E] extends [never] ? never : { success: false; error: E });
 

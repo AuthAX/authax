@@ -110,18 +110,19 @@ export async function hmacVerify(
 
 /** Encode a JSON payload to base64url */
 // TODO: Rename to jsonToBase64Url
-export function encodePayload<T extends object>(payload: T): string {
+export function encodePayload(payload: object): string {
   return base64urlEncode(JSON.stringify(payload));
 }
 
 /** Decode a base64url string to JSON payload */
 // TODO: Rename to base64UrlToJson
-export function decodePayload<T>(encoded: string): T | null {
+export function decodePayload(encoded: string): unknown {
   const bytes = base64urlDecode(encoded);
   if (!bytes) return null;
 
   try {
-    return JSON.parse(decoder.decode(bytes));
+    const parsed: unknown = JSON.parse(decoder.decode(bytes));
+    return parsed;
   } catch {
     return null;
   }

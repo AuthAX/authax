@@ -29,29 +29,37 @@ test("verifyAdditionalRegistration rejects a mismatched user before storing the 
   const credentials = new Map<string, CredentialRecord>();
   const engine = makePasskeyEngine({
     storage: {
-      store: async (record) => {
+      store: (record) => {
         credentials.set(record.credentialId, record);
+        return Promise.resolve();
       },
-      get: async (credentialId) => credentials.get(credentialId) ?? null,
-      list: async (userId) =>
-        [...credentials.values()].filter((record) => record.userId === userId),
-      setCounter: async (credentialId, counter) => {
+      get: (credentialId) =>
+        Promise.resolve(credentials.get(credentialId) ?? null),
+      list: (userId) =>
+        Promise.resolve(
+          [...credentials.values()].filter(
+            (record) => record.userId === userId,
+          ),
+        ),
+      setCounter: (credentialId, counter) => {
         const record = credentials.get(credentialId);
         if (record !== undefined) {
           credentials.set(credentialId, { ...record, counter });
         }
+        return Promise.resolve();
       },
     },
     challenge: {
       ttl: 300_000,
       storage: {
-        store: async (record) => {
+        store: (record) => {
           challenges.set(record.challenge, record);
+          return Promise.resolve();
         },
-        take: async (value) => {
+        take: (value) => {
           const record = challenges.get(value) ?? null;
           challenges.delete(value);
-          return record;
+          return Promise.resolve(record);
         },
       },
     },
@@ -60,7 +68,7 @@ test("verifyAdditionalRegistration rejects a mismatched user before storing the 
       rpName: "Passkey test",
       allowedOrigins: ["http://localhost:3107"],
     },
-    displayName: async () => "Alice",
+    displayName: () => Promise.resolve("Alice"),
     signUp: null,
     debug: false,
   });

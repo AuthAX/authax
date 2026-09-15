@@ -151,7 +151,7 @@ expectType(auth.withOtp);
 const sessionWithPublicGet = {
   kernel: session.kernel,
   capabilities: {
-    get: async () => null,
+    get: () => Promise.resolve(null),
   },
 };
 
@@ -362,12 +362,12 @@ type HeaderCredential = {
 declare const cookieSession: SessionAdapter<
   SessionClaims,
   CookieCredential,
-  {}
+  object
 >;
 declare const headerSession: SessionAdapter<
   SessionClaims,
   HeaderCredential,
-  {}
+  object
 >;
 
 const cookieAuth = makeAuth(cookieSession, reusableStrategies);

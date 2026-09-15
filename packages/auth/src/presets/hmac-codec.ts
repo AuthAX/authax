@@ -57,7 +57,8 @@ export function makeHmacCodec<TPayload extends object>(options: {
         const valid = await hmacVerify(encoded, signature, options.secret);
         if (!valid) return null;
 
-        const data = decodePayload<TPayload & { exp: number }>(encoded);
+        const data = decodePayload(encoded) as
+          (TPayload & { exp: number }) | null;
         if (!data) return null;
 
         return {
