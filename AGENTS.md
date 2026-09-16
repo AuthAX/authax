@@ -33,7 +33,7 @@ Take any piece of content and go down this list in order. The first match is whe
 5. `.agents/skills/*/SKILL.md`: one kind of job, loaded only when doing it.
 6. `examples/*/*/README.md`: how to run that example and what it shows.
 
-`SPEC.md`, `docs/`, and `services/` are history, not authority.
+`SPEC.md`, `docs/`, and `service/` are history, not authority.
 
 ## Prose style
 
