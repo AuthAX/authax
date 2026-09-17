@@ -22,7 +22,7 @@
     "clean:hard": "rm -rf bun.lock && bun run clean:soft"
   },
   "devDependencies": {
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.7",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "typescript": "^6.0.3",
     "vitest": "^5.0.1"

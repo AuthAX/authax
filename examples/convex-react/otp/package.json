@@ -14,7 +14,7 @@
     "authax": "workspace:*",
     "@repo/shared-react": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
-    "convex": "^1.45.0",
+    "convex": "^1.46.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "tailwindcss": "^4.3.3",
