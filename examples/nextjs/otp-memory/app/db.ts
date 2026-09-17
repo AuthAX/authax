@@ -29,6 +29,7 @@ export const db = {
 
     get: (userId: string) => users.get(userId),
 
+    // TODO: This demo store does not enforce email uniqueness.
     updateEmail: (userId: string, email: string) => {
       const user = users.get(userId);
       if (!user) return undefined;
