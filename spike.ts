@@ -29,30 +29,34 @@ const opaque = {
  * OTP strategy
  */
 
-// OTP. One code per email, checked once.
-const codesTable = new Map<string, string>();
+// OTP. One row per sent otp, keyed by a random id. Checked once.
+const otpsTable = new Map<string, { email: string; otp: string }>();
 
 const otp = {
   send: async (email: string) => {
     console.log("sending", email);
+    const id = crypto.randomUUID();
     const otp = crypto.randomUUID();
-    codesTable.set(email, otp);
+    otpsTable.set(id, { email, otp: otp });
 
-    // Capture the code for demo
+    // Capture the otp for demo
     _interceptedOneTimePasscode = otp;
 
-    // send the code to the email address
+    // send the otp to the email address
     console.log("sent", email, otp);
+    return id;
   },
-  verify: async ({ email, code }: { email: string; code: string }) => {
-    console.log("verifying", email, code);
+  verify: async ({ id, otp }: { id: string; otp: string }) => {
+    console.log("verifying", id, otp);
 
-    const ok = codesTable.get(email) === code;
+    const row = otpsTable.get(id) ?? null;
 
-    codesTable.delete(email);
+    otpsTable.delete(id);
 
-    console.log("verified", email, ok);
-    return ok;
+    const ok = row !== null && row.otp === otp;
+
+    console.log("verified", row?.email, ok);
+    return ok && row !== null ? { email: row.email } : null;
   },
 };
 
@@ -60,21 +64,22 @@ const otp = {
  * Core
  */
 
-/** Takes an input and returns true or false. */
-type Authenticate<Input> = (input: Input) => Promise<boolean>;
+/** Takes an input and returns what was proven, or null. */
+type Authenticate<Input, Proven> = (input: Input) => Promise<Proven | null>;
 
-/** Takes something to remember and returns a session id. */
-type MakeSession<Input> = (input: Input) => Promise<string>;
+/** Takes what was proven and returns a session id. */
+type MakeSession<Proven> = (proven: Proven) => Promise<string>;
 
-/** The rule. A session is made only when authenticate returned true. */
-function core<Input>(
-  authenticate: Authenticate<Input>,
-  makeSession: MakeSession<Input>,
+/** The rule. A session is made only when authenticate returned something. */
+function core<Input, Proven>(
+  authenticate: Authenticate<Input, Proven>,
+  makeSession: MakeSession<Proven>,
 ) {
   return async (input: Input): Promise<string | null> => {
-    if (!(await authenticate(input))) return null;
+    const proven = await authenticate(input);
+    if (proven === null) return null;
 
-    return makeSession(input);
+    return makeSession(proven);
   };
 }
 
@@ -84,13 +89,13 @@ function core<Input>(
 
 console.log("-".repeat(80));
 
-await otp.send(_email);
+const otpId = await otp.send(_email);
 
 export const signIn = core(otp.verify, opaque.make);
 
 const sessionId = await signIn({
-  email: _email,
-  code: _interceptedOneTimePasscode,
+  id: otpId,
+  otp: _interceptedOneTimePasscode,
 });
 console.log("sessionId", sessionId);
 console.log("SESSION", sessionId ? await opaque.get(sessionId) : null);
