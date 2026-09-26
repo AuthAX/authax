@@ -12,7 +12,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["spike.ts", "spike-no-kernel.ts", "spike-helpers.ts"],
+  "include": ["spike.ts", "spike-no-kernel.ts", "spike-helpers.ts"]
 }
