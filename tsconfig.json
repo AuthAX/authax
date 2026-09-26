@@ -14,5 +14,5 @@
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
   },
-  "include": ["spike.ts", "spike-no-kernel.ts"],
+  "include": ["spike.ts", "spike-no-kernel.ts", "spike-helpers.ts"],
 }

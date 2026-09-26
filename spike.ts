@@ -1,35 +1,7 @@
+import { createTable } from "./spike-helpers";
+
 const _email = "ripley@example.com";
 let _interceptedOneTimePasscode = "";
-
-function createTable<V extends object>() {
-  const data = new Map<string, V & { id: string }>();
-
-  const insert = (row: V) => {
-    const record = { ...row, id: crypto.randomUUID() };
-    data.set(record.id, record);
-    return record;
-  };
-
-  return {
-    get: async (id: string) => data.get(id) ?? null,
-    insert: async (row: V) => insert(row),
-    upsert: async (key: keyof V, row: V) => {
-      for (const [id, current] of data) {
-        if (current[key] === row[key]) {
-          const record = { ...row, id };
-          data.set(id, record);
-          return record;
-        }
-      }
-      return insert(row);
-    },
-    delete: async (id: string) => {
-      const row = data.get(id) ?? null;
-      data.delete(id);
-      return row;
-    },
-  };
-}
 
 // The app's own table. Keyed by a random id, email is a column.
 const usersTable = createTable<{ email: string }>();
