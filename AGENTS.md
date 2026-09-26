@@ -30,10 +30,13 @@ Take any piece of content and go down this list in order. The first match is whe
 2. `packages/authax/README.md`: how to use the library.
 3. `README.md`: why the project exists and how it differs.
 4. `AGENTS.md`: a rule every session must follow, whatever the task.
-5. `.agents/skills/*/SKILL.md`: one kind of job, loaded only when doing it.
-6. `examples/*/*/README.md`: how to run that example and what it shows.
+5. `examples/*/*/README.md`: how to run that example and what it shows.
 
-`SPEC.md`, `docs/`, and `service/` are history, not authority.
+### Outdated docs
+
+`SPEC.md`, `docs/`, and `service/` are retained for later consolidation. They have not kept pace with the library and may contain useful but conflicting guidance. Do not use them as authority.
+
+Work on `.agents/skills/` and `.claude/skills/` is paused. Do not use or follow these skills.
 
 ## Prose style
 
