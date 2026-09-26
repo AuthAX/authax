@@ -63,11 +63,30 @@ export type SessionKernel<
   establish: (userId: string) => Promise<SessionCredential>;
 };
 
+/**
+ * Public operations under caller chosen names. The map is projected into
+ * the public surface unchanged, so data has no place on it.
+ */
+export type Namespace = Record<string, (...args: never[]) => unknown>;
+
+/** A namespace with no operations */
+// eslint-disable-next-line @typescript-eslint/no-generated-empty-object-type -- the empty object type is the point
+export type EmptyNamespace = Record<never, never>;
+
+/**
+ * Marks every empty namespace as never. A strategy with no operations is a
+ * mistake, a session with no capabilities is not, so this applies to the
+ * strategy map only.
+ */
+export type NonEmptyNamespaces<Namespaces extends Record<string, Namespace>> = {
+  [K in keyof Namespaces]: keyof Namespaces[K] extends never ? never : unknown;
+};
+
 /** Capability names reserved for the kernel's public projection */
 type ReservedSessionCapability = "get";
 
 /** A public capability set cannot replace the kernel's read projection */
-export type SessionCapabilitySet<Capabilities extends object> =
+export type SessionCapabilitySet<Capabilities extends Namespace> =
   Extract<keyof Capabilities, ReservedSessionCapability> extends never
     ? Capabilities
     : never;
@@ -84,7 +103,7 @@ export type SessionCapabilitySet<Capabilities extends object> =
 export type SessionAdapter<
   Identity extends SessionIdentity,
   SessionCredential,
-  Capabilities extends object,
+  Capabilities extends Namespace,
 > = {
   kernel: SessionKernel<Identity, SessionCredential>;
   capabilities: SessionCapabilitySet<Capabilities>;
@@ -93,7 +112,7 @@ export type SessionAdapter<
 /** Session access plus exactly the configured mechanism capabilities */
 export type SessionNamespace<
   Identity extends SessionIdentity,
-  Capabilities extends object,
+  Capabilities extends Namespace,
 > = {
   get: (token: string | null) => Promise<Identity | null>;
 } & SessionCapabilitySet<Capabilities>;
@@ -127,8 +146,8 @@ export type StrategyKernel<
 /** Auth surface produced by one kernel bound namespace map */
 export type Auth<
   Identity extends SessionIdentity,
-  Capabilities extends object,
-  Namespaces extends Record<string, object>,
+  Capabilities extends Namespace,
+  Namespaces extends Record<string, Namespace>,
 > = {
   session: SessionNamespace<Identity, Capabilities>;
   strategies: Namespaces;
@@ -413,11 +432,11 @@ export type PasskeyStrategy<SessionCredential> = {
 export declare function makeAuth<
   Identity extends SessionIdentity,
   SessionCredential,
-  Capabilities extends object,
-  const Namespaces extends Record<string, object>,
+  Capabilities extends Namespace,
+  const Namespaces extends Record<string, Namespace>,
 >(
   session: SessionAdapter<Identity, SessionCredential, Capabilities>,
   strategies: (
     kernel: StrategyKernel<NoInfer<Identity>, NoInfer<SessionCredential>>,
-  ) => Namespaces,
+  ) => Namespaces & NonEmptyNamespaces<Namespaces>,
 ): Auth<Identity, Capabilities, Namespaces>;

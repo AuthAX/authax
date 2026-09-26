@@ -1,6 +1,8 @@
 import { invariant } from "./lib";
 import type {
   Auth,
+  Namespace,
+  NonEmptyNamespaces,
   SessionAdapter,
   SessionIdentity,
   SessionKernel,
@@ -44,13 +46,13 @@ function makeStrategyKernel<
 export function makeAuth<
   Identity extends SessionIdentity,
   SessionCredential,
-  Capabilities extends object,
-  const Namespaces extends Record<string, object>,
+  Capabilities extends Namespace,
+  const Namespaces extends Record<string, Namespace>,
 >(
   session: SessionAdapter<Identity, SessionCredential, Capabilities>,
   strategies: (
     kernel: StrategyKernel<NoInfer<Identity>, NoInfer<SessionCredential>>,
-  ) => Namespaces,
+  ) => Namespaces & NonEmptyNamespaces<Namespaces>,
 ): Auth<Identity, Capabilities, Namespaces> {
   return {
     session: {

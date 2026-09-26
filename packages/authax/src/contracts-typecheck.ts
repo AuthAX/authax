@@ -6,6 +6,7 @@
  */
 import type {
   AuthUser,
+  EmptyNamespace,
   OtpEngine,
   OtpStrategy,
   PasskeyEngine,
@@ -168,8 +169,35 @@ void makeAuth(
   () => ({}),
 );
 
-// @ts-expect-error Every public namespace must be an object.
-void makeAuth(session, () => ({ invalid: 1 }));
+// @ts-expect-error A namespace holds operations, not data.
+void makeAuth(session, () => ({ invalid: { x: 1 } }));
+
+// @ts-expect-error A namespace is not a bare function.
+void makeAuth(session, () => ({ invalid: () => undefined }));
+
+// @ts-expect-error A namespace is not an array.
+void makeAuth(session, () => ({ invalid: [] }));
+
+// @ts-expect-error A namespace is not a class instance.
+void makeAuth(session, () => ({ invalid: new Date() }));
+
+// @ts-expect-error One data field poisons a namespace.
+void makeAuth(session, () => ({ invalid: { begin: () => undefined, x: 1 } }));
+
+// @ts-expect-error A namespace mounts at least one operation.
+void makeAuth(session, () => ({ invalid: {} }));
+
+// @ts-expect-error An empty namespace beside a valid one is still rejected.
+void makeAuth(session, () => ({ otp: auth.strategies.otp, invalid: {} }));
+
+void makeAuth(
+  {
+    kernel: session.kernel,
+    // @ts-expect-error A capability is an operation, not data.
+    capabilities: { count: 1 },
+  },
+  () => ({}),
+);
 
 declare const kernel: StrategyKernel<SessionClaims, SessionCredential>;
 declare const prove: () => Promise<Result<ResolvedUser, "invalid_otp">>;
@@ -362,12 +390,12 @@ type HeaderCredential = {
 declare const cookieSession: SessionAdapter<
   SessionClaims,
   CookieCredential,
-  object
+  EmptyNamespace
 >;
 declare const headerSession: SessionAdapter<
   SessionClaims,
   HeaderCredential,
-  object
+  EmptyNamespace
 >;
 
 const cookieAuth = makeAuth(cookieSession, reusableStrategies);

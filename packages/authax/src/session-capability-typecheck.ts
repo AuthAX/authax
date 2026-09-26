@@ -6,6 +6,7 @@
  */
 import type {
   AuthUser,
+  EmptyNamespace,
   Result,
   SessionAdapter,
   SessionIdentity,
@@ -116,7 +117,7 @@ type CustomCredential = {
 declare const customSession: SessionAdapter<
   CustomIdentity,
   CustomCredential,
-  object
+  EmptyNamespace
 >;
 declare const customProof: () => Promise<Result<AuthUser, never>>;
 
