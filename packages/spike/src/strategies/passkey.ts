@@ -1,4 +1,4 @@
-import { Proof, fail } from "./proof";
+import { Proof, fail } from "../proof";
 
 /**
  * Fake. No WebAuthn, the "signature" is the public key sent back as is.

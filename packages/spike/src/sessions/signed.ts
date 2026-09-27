@@ -1,5 +1,5 @@
-import { Proof } from "./proof";
-import type { SessionContract } from "./session";
+import { Proof } from "../proof";
+import type { SessionContract } from "./contract";
 
 /**
  * Stateless. The session travels inside the token, signed so it cannot be

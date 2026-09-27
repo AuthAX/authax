@@ -1,5 +1,5 @@
-import { Proof } from "./proof";
-import type { SessionContract } from "./session";
+import { Proof } from "../proof";
+import type { SessionContract } from "./contract";
 
 /** The token is the row id. Ending a session is deleting the row. */
 export function makeOpaqueSession<Session extends object>(args: {

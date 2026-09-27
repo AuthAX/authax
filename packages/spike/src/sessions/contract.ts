@@ -1,4 +1,4 @@
-import type { Proof } from "./proof";
+import type { Proof } from "../proof";
 
 /**
  * What every session implementation provides. make spends a proof and

@@ -1,4 +1,4 @@
-import { Proof, fail } from "./proof";
+import { Proof, fail } from "../proof";
 
 export function makeOTP(args: {
   /** Stores an otp row and returns its id */
