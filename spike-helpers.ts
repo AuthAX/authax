@@ -10,6 +10,12 @@ export function createTable<V extends object>() {
   return {
     get: async (id: string) => data.get(id) ?? null,
     insert: async (row: V) => insert(row),
+    /** Insert with a caller supplied id */
+    put: async (id: string, row: V) => {
+      const record = { ...row, id };
+      data.set(id, record);
+      return record;
+    },
     upsert: async (key: keyof V, row: V) => {
       for (const [id, current] of data) {
         if (current[key] === row[key]) {
