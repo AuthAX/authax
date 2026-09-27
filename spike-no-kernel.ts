@@ -104,7 +104,9 @@ function makeOTP(args: {
  * way it maps an OTP identifier to a user.
  */
 
-type Purpose = "register" | "authenticate";
+/** A registration challenge carries the handle until the ceremony finishes */
+type Challenge =
+  { purpose: "register"; handle: string } | { purpose: "authenticate" };
 
 function makePasskey(args: {
   /** The relying party id, the domain passkeys are bound to */
@@ -112,23 +114,39 @@ function makePasskey(args: {
   /** The relying party name, shown by the authenticator */
   rpName: string;
   /** Stores a challenge row and returns its id, which is the challenge */
-  storeChallenge: (row: { purpose: Purpose }) => Promise<{ id: string }>;
+  storeChallenge: (row: Challenge) => Promise<{ id: string }>;
   /** Removes a challenge row by id and returns it, atomically. Null when there is none. */
-  takeChallenge: (id: string) => Promise<{ purpose: Purpose } | null>;
+  takeChallenge: (id: string) => Promise<Challenge | null>;
   /** Stores a credential row under the id the authenticator chose */
-  storeCredential: (row: { id: string; publicKey: string }) => Promise<void>;
+  storeCredential: (row: {
+    id: string;
+    publicKey: string;
+    handle: string;
+  }) => Promise<void>;
   /** Reads a credential row by id, null when there is none */
-  getCredential: (id: string) => Promise<{ publicKey: string } | null>;
+  getCredential: (
+    id: string,
+  ) => Promise<{ publicKey: string; handle: string } | null>;
 }) {
   return {
-    /** name is what the authenticator shows for this passkey, an email or a username */
-    beginRegistration: async ({ name }: { name: string }) => {
-      const { id } = await args.storeChallenge({ purpose: "register" });
+    /**
+     * handle is the app's stable id for the person, the authenticator keeps it
+     * with the credential and returns it on authentication. name is what the
+     * authenticator shows, an email or a username.
+     */
+    beginRegistration: async ({
+      handle,
+      name,
+    }: {
+      handle: string;
+      name: string;
+    }) => {
+      const { id } = await args.storeChallenge({ purpose: "register", handle });
 
       return {
         challenge: id,
         rp: { id: args.rpId, name: args.rpName },
-        user: { name },
+        user: { id: handle, name },
       };
     },
 
@@ -146,9 +164,13 @@ function makePasskey(args: {
       if (row === null) return fail("challenge");
       if (row.purpose !== "register") return fail("challenge");
 
-      await args.storeCredential({ id: credentialId, publicKey });
+      await args.storeCredential({
+        id: credentialId,
+        publicKey,
+        handle: row.handle,
+      });
 
-      return Proof.prove({ credentialId });
+      return Proof.prove({ credentialId, userHandle: row.handle });
     },
 
     beginAuthentication: async () => {
@@ -161,10 +183,12 @@ function makePasskey(args: {
       challenge,
       credentialId,
       signature,
+      userHandle,
     }: {
       challenge: string;
       credentialId: string;
       signature: string;
+      userHandle: string;
     }) => {
       const row = await args.takeChallenge(challenge);
 
@@ -175,8 +199,9 @@ function makePasskey(args: {
 
       if (credential === null) return fail("credential");
       if (credential.publicKey !== signature) return fail("signature");
+      if (credential.handle !== userHandle) return fail("handle");
 
-      return Proof.prove({ credentialId });
+      return Proof.prove({ credentialId, userHandle });
     },
   };
 }
@@ -187,14 +212,11 @@ function makePasskey(args: {
 
 const sessionsTable = createTable<{ userId: string }>();
 const otpsTable = createTable<{ identifier: string; otp: string }>();
-const challengesTable = createTable<{ purpose: Purpose }>();
-const credentialsTable = createTable<{ publicKey: string }>();
+const challengesTable = createTable<Challenge>();
+const credentialsTable = createTable<{ publicKey: string; handle: string }>();
 
-// The app's own link from credential to user. The library never sees it.
-const credentialOwners = new Map<string, string>();
-
-// The fake authenticator in the browser. Credential id to its key.
-const authenticator = new Map<string, string>();
+// The fake authenticator in the browser. Credential id to its key and handle.
+const authenticator = new Map<string, { key: string; handle: string }>();
 
 // Captures what would have been delivered, for the demo
 const delivered = new Map<string, string>();
@@ -227,8 +249,8 @@ const passkey = makePasskey({
   rpName: "Spike",
   storeChallenge: (row) => challengesTable.insert(row),
   takeChallenge: (id) => challengesTable.delete(id),
-  storeCredential: async ({ id, publicKey }) => {
-    await credentialsTable.put(id, { publicKey });
+  storeCredential: async ({ id, publicKey, handle }) => {
+    await credentialsTable.put(id, { publicKey, handle });
   },
   getCredential: (id) => credentialsTable.get(id),
 });
@@ -270,9 +292,13 @@ const smsSessionId = await opaque.make(smsProof, async ({ identifier }) => ({
 }));
 console.log("SESSION", await opaque.get(smsSessionId));
 
-// Passkey sign-up. 1. begin, 2. browser creates a credential, 3. finish,
-// 4. app creates the user and links the credential, 5. session
-const signUp = await passkey.beginRegistration({ name: "ripley@example.com" });
+// Passkey sign-up. 1. app creates the user, 2. begin with its id as the
+// handle, 3. browser creates a credential, 4. finish, 5. session
+const ripley = "user-ripley";
+const signUp = await passkey.beginRegistration({
+  handle: ripley,
+  name: "ripley@example.com",
+});
 console.log("OPTIONS", signUp);
 const newCredentialId = crypto.randomUUID();
 const newKey = crypto.randomUUID();
@@ -282,41 +308,43 @@ const registered = await passkey.finishRegistration({
   publicKey: newKey,
 });
 if (!(registered instanceof Proof)) throw new Error(registered.reason);
-authenticator.set(newCredentialId, newKey);
+authenticator.set(newCredentialId, { key: newKey, handle: signUp.user.id });
 
-credentialOwners.set(registered.proven.credentialId, "user-ripley");
 const signUpSessionId = await opaque.make(
   registered,
-  async ({ credentialId }) => ({
-    userId: credentialOwners.get(credentialId) ?? "",
-  }),
+  async ({ userHandle }) => ({ userId: userHandle }),
 );
 console.log("SESSION", await opaque.get(signUpSessionId));
 
 // Passkey sign-in. 1. begin, 2. browser signs, 3. finish, 4. session
 const signIn = await passkey.beginAuthentication();
-const [credentialId, key] = authenticator.entries().next().value ?? ["", ""];
+const [credentialId, stored] = authenticator.entries().next().value ?? [
+  "",
+  { key: "", handle: "" },
+];
 const authenticated = await passkey.finishAuthentication({
   challenge: signIn.challenge,
   credentialId,
-  signature: key,
+  signature: stored.key,
+  userHandle: stored.handle,
 });
 if (!(authenticated instanceof Proof)) throw new Error(authenticated.reason);
 
 const signInSessionId = await opaque.make(
   authenticated,
-  async ({ credentialId }) => ({
-    userId: credentialOwners.get(credentialId) ?? "",
-  }),
+  async ({ userHandle }) => ({ userId: userHandle }),
 );
 console.log("SESSION", await opaque.get(signInSessionId));
 
-// Add a passkey while signed in. The session says who, the app links, no
-// new session
+// Add a passkey while signed in. The session says who, its user id is the
+// handle, no new session
 const current = await opaque.get(signInSessionId);
 if (current === null) throw new Error("not signed in");
 
-const add = await passkey.beginRegistration({ name: "ripley@example.com" });
+const add = await passkey.beginRegistration({
+  handle: current.userId,
+  name: "ripley@example.com",
+});
 const secondCredentialId = crypto.randomUUID();
 const secondKey = crypto.randomUUID();
 const added = await passkey.finishRegistration({
@@ -325,9 +353,8 @@ const added = await passkey.finishRegistration({
   publicKey: secondKey,
 });
 if (!(added instanceof Proof)) throw new Error(added.reason);
-authenticator.set(secondCredentialId, secondKey);
-credentialOwners.set(added.proven.credentialId, current.userId);
-console.log("OWNERS", credentialOwners);
+authenticator.set(secondCredentialId, { key: secondKey, handle: add.user.id });
+console.log("ADDED", added.proven);
 
 // Failures come back with a reason
 const wrongOtpId = await emailOtp.send("ripley@example.com");
@@ -339,6 +366,7 @@ console.log(
     challenge: (await passkey.beginAuthentication()).challenge,
     credentialId: "not-a-credential",
     signature: "",
+    userHandle: "",
   }),
 );
 
