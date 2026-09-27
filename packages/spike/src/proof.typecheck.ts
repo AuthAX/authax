@@ -3,10 +3,10 @@
  * Typechecked, never run.
  */
 import type { Proof } from "./proof";
-import type { makeOpaqueSession } from "./sessions/opaque";
+import type { makeOpaqueSessionManager } from "./sessions/opaque";
 
-declare const sessions: ReturnType<
-  typeof makeOpaqueSession<{ userId: string }>
+declare const sessionManager: ReturnType<
+  typeof makeOpaqueSessionManager<{ userId: string }>
 >;
 
 // @ts-expect-error a proof cannot be written by hand
@@ -15,7 +15,7 @@ const written: Proof<{ identifier: string }> = {
 };
 void written;
 
-void sessions.make(
+void sessionManager.make(
   // @ts-expect-error a session cannot be made without a proof
   { proven: { identifier: "victim@example.com" } },
   async () => ({ userId: "victim" }),

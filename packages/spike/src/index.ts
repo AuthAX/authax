@@ -1,4 +1,4 @@
-export { makeOpaqueSession } from "./sessions/opaque";
-export { makeSignedSession } from "./sessions/signed";
+export { makeOpaqueSessionManager } from "./sessions/opaque";
+export { makeSignedSessionManager } from "./sessions/signed";
 export { makeOTP } from "./strategies/otp";
 export { makePasskey, type Challenge } from "./strategies/passkey";

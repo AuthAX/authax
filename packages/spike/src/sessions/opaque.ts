@@ -1,8 +1,8 @@
 import { consumeProof, type Proof } from "../proof";
-import type { SessionContract } from "./contract";
+import type { SessionManager } from "./contract";
 
 /** The token is a random string the row is stored under. Ending a session is deleting the row. */
-export function makeOpaqueSession<Session extends object>(args: {
+export function makeOpaqueSessionManager<Session extends object>(args: {
   /** Stores a session row under the token */
   store: (token: string, row: Session) => Promise<void>;
   /** Reads the session row for a token, null when there is none */
@@ -22,5 +22,5 @@ export function makeOpaqueSession<Session extends object>(args: {
     },
 
     get: (token: string) => args.get(token),
-  } satisfies SessionContract<Session>;
+  } satisfies SessionManager<Session>;
 }

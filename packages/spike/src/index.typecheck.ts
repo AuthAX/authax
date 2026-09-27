@@ -10,12 +10,12 @@ import { issueProof } from "./index";
 import { consumeProof } from "./index";
 // @ts-expect-error failures are made by strategies, the app only reads them
 import { fail } from "./index";
-// @ts-expect-error the session contract is for the library's own sessions
-import type { SessionContract } from "./index";
+// @ts-expect-error the contract is for the library's own session managers
+import type { SessionManager } from "./index";
 // @ts-expect-error an app never has to name a proof
 import type { Proof } from "./index";
 // @ts-expect-error an app never has to name a failure
 import type { Failure } from "./index";
 
 export const absent = [issueProof, consumeProof, fail];
-export type Absent = [SessionContract<object>, Proof<object>, Failure<string>];
+export type Absent = [SessionManager<object>, Proof<object>, Failure<string>];

@@ -1,8 +1,8 @@
 import {
-  makeOpaqueSession,
+  makeOpaqueSessionManager,
   makeOTP,
   makePasskey,
-  makeSignedSession,
+  makeSignedSessionManager,
   type Challenge,
 } from "./src/index";
 import { makeTable } from "./spike-helpers";
@@ -22,7 +22,7 @@ const authenticator = new Map<string, { key: string; handle: string }>();
 // Captures what would have been delivered, for the demo
 const delivered = new Map<string, string>();
 
-const opaque = makeOpaqueSession<{ userId: string }>({
+const opaque = makeOpaqueSessionManager<{ userId: string }>({
   store: async (token, row) => {
     await sessionsTable.put(token, row);
   },
@@ -168,8 +168,9 @@ if (!added.success) throw new Error(added.error);
 authenticator.set(secondCredentialId, { key: secondKey, handle: add.user.id });
 console.log("ADDED", added.data.proven);
 
-// Signed session. Same three steps, no table. The token carries the session
-const signed = makeSignedSession<{ userId: string }>({
+// Signed session manager. Same three steps, no table. The token carries the
+// session
+const signed = makeSignedSessionManager<{ userId: string }>({
   secret: "spike-secret",
   ttl: 60 * 60 * 1000,
 });

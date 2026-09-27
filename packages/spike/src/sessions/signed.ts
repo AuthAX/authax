@@ -1,12 +1,12 @@
 import { consumeProof, type Proof } from "../proof";
-import type { SessionContract } from "./contract";
+import type { SessionManager } from "./contract";
 
 /**
  * Stateless. The session travels inside the token, signed so it cannot be
  * altered. Nothing is stored, so there is nothing to end. A token is valid
  * until it expires, which is why ttl is not optional here.
  */
-export function makeSignedSession<Session extends object>(args: {
+export function makeSignedSessionManager<Session extends object>(args: {
   /** HMAC secret. Anyone holding it can mint a session. */
   secret: string;
   /** Lifetime of a token in ms */
@@ -61,7 +61,7 @@ export function makeSignedSession<Session extends object>(args: {
 
       return session;
     },
-  } satisfies SessionContract<Session>;
+  } satisfies SessionManager<Session>;
 }
 
 function bytes(value: string) {
