@@ -33,6 +33,9 @@ const opaque = makeOpaqueSessionManager<{ userId: string }>({
     await sessionsTable.put(token, row);
   },
   get: (token) => sessionsTable.get(token),
+  delete: async (token) => {
+    await sessionsTable.delete(token);
+  },
   ttl: 30 * 24 * 60 * 60 * 1000,
 });
 

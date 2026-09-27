@@ -1,15 +1,16 @@
 import { consumeProof, type Proof } from "../proof";
 
 /**
- * The token is a random string the row is stored under. Ending a session is
- * deleting the row. The row is the session with expiresAt added, so a session
- * has no expiresAt of its own.
+ * The token is a random string the row is stored under. The row is the
+ * session with expiresAt added, so a session has no expiresAt of its own.
  */
 export function makeOpaqueSessionManager<Session extends object>(args: {
   /** Stores a session row under the token. expiresAt is in ms since the epoch. */
   store: (token: string, row: Session & { expiresAt: number }) => Promise<void>;
   /** Reads the session row for a token, null when there is none */
   get: (token: string) => Promise<(Session & { expiresAt: number }) | null>;
+  /** Removes the session row for a token. Does nothing when there is none. */
+  delete: (token: string) => Promise<void>;
   /** Lifetime of a session in ms */
   ttl: number;
 }) {
@@ -36,6 +37,11 @@ export function makeOpaqueSessionManager<Session extends object>(args: {
       if (row.expiresAt <= Date.now()) return null;
 
       return row;
+    },
+
+    /** Ends the session. The token stops working at once. */
+    end: async (token: string) => {
+      await args.delete(token);
     },
   };
 }
