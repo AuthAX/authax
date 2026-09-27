@@ -4,23 +4,34 @@ import {
   makePasskey,
   makeSignedSessionManager,
 } from "./src/index";
-import { makeTable } from "./src/demo/index";
+import { makeMemoryTable } from "./src/demo/index";
 
 /**
  * App
  */
 
-const sessionsTable = makeTable<{ userId: string; expiresAt: number }>();
-const otpsTable = makeTable<{
+const sessionsTable = makeMemoryTable<{
+  token: string;
+  userId: string;
+  expiresAt: number;
+}>("token");
+const otpsTable = makeMemoryTable<{
+  ticket: string;
   identifier: string;
   otp: string;
   expiresAt: number;
   attemptsLeft: number;
-}>();
-const challengesTable = makeTable<
-  { purpose: "register"; handle: string } | { purpose: "authenticate" }
->();
-const credentialsTable = makeTable<{ publicKey: string; handle: string }>();
+}>("ticket");
+const challengesTable = makeMemoryTable<
+  { challenge: string } & (
+    { purpose: "register"; handle: string } | { purpose: "authenticate" }
+  )
+>("challenge");
+const credentialsTable = makeMemoryTable<{
+  credentialId: string;
+  publicKey: string;
+  handle: string;
+}>("credentialId");
 
 // The fake authenticator in the browser. Credential id to its key and handle.
 const authenticator = new Map<string, { key: string; handle: string }>();
@@ -30,7 +41,7 @@ const delivered = new Map<string, string>();
 
 const opaque = makeOpaqueSessionManager<{ userId: string }>({
   store: async (token, row) => {
-    await sessionsTable.put(token, row);
+    await sessionsTable.insert({ token, ...row });
   },
   get: (token) => sessionsTable.get(token),
   delete: async (token) => {
@@ -41,7 +52,7 @@ const opaque = makeOpaqueSessionManager<{ userId: string }>({
 
 const emailOtp = makeOTP({
   store: async (ticket, row) => {
-    await otpsTable.put(ticket, row);
+    await otpsTable.insert({ ticket, ...row });
   },
   take: (ticket) => otpsTable.delete(ticket),
   send: async (identifier, otp) => {
@@ -54,7 +65,7 @@ const emailOtp = makeOTP({
 
 const smsOtp = makeOTP({
   store: async (ticket, row) => {
-    await otpsTable.put(ticket, row);
+    await otpsTable.insert({ ticket, ...row });
   },
   take: (ticket) => otpsTable.delete(ticket),
   send: async (identifier, otp) => {
@@ -69,11 +80,11 @@ const passkey = makePasskey({
   rpId: "localhost",
   rpName: "Spike",
   storeChallenge: async (challenge, row) => {
-    await challengesTable.put(challenge, row);
+    await challengesTable.insert({ challenge, ...row });
   },
   takeChallenge: (challenge) => challengesTable.delete(challenge),
   storeCredential: async (credentialId, row) => {
-    await credentialsTable.put(credentialId, row);
+    await credentialsTable.insert({ credentialId, ...row });
   },
   getCredential: (credentialId) => credentialsTable.get(credentialId),
 });

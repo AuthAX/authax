@@ -1,1 +1,1 @@
-export { makeTable } from "./memory-table";
+export { makeMemoryTable } from "./memory-table";

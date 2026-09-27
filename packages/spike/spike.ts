@@ -1,16 +1,18 @@
-import { makeTable } from "./src/demo/index";
+import { makeMemoryTable } from "./src/demo/index";
 
 const _email = "ripley@example.com";
 let _interceptedOneTimePasscode = "";
 
 // The app's own table. Keyed by a random id, email is a column.
-const usersTable = makeTable<{ email: string }>();
+const usersTable = makeMemoryTable<{ id: string; email: string }>("id");
 
 // Opaque session. Remembers the user id under a random id.
-const sessionsTable = makeTable<{ userId: string }>();
+const sessionsTable = makeMemoryTable<{ id: string; userId: string }>("id");
 
 // OTP. One row per sent otp, keyed by a random id. Checked once.
-const otpsTable = makeTable<{ email: string; otp: string }>();
+const otpsTable = makeMemoryTable<{ id: string; email: string; otp: string }>(
+  "id",
+);
 
 /**
  * Session
@@ -20,7 +22,8 @@ const opaque = {
   make: async ({ userId }: { userId: string }) => {
     console.log("making session", userId);
 
-    const { id } = await sessionsTable.insert({ userId });
+    const id = crypto.randomUUID();
+    await sessionsTable.insert({ id, userId });
 
     console.log("session made", id, userId);
     return id;
@@ -40,7 +43,8 @@ const otp = {
   send: async (email: string) => {
     console.log("sending", email);
     const otp = crypto.randomUUID();
-    const { id } = await otpsTable.insert({ email, otp });
+    const id = crypto.randomUUID();
+    await otpsTable.insert({ id, email, otp });
 
     // Capture the otp for demo
     _interceptedOneTimePasscode = otp;
@@ -93,7 +97,10 @@ console.log("-".repeat(80));
 const otpId = await otp.send(_email);
 
 export const signIn = core(otp.verify, async ({ email }) => {
-  const user = await usersTable.upsert("email", { email });
+  const [existing] = await usersTable.where({ email });
+  const user = existing ?? { id: crypto.randomUUID(), email };
+  if (existing === undefined) await usersTable.insert(user);
+
   return opaque.make({ userId: user.id });
 });
 
