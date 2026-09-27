@@ -1,4 +1,4 @@
-import { fail, succeed, type Result } from "../failure";
+import { fail, succeed, type Result } from "../result";
 import { issueProof, type Proof } from "../proof";
 
 export function makeOTP(args: {
