@@ -1,5 +1,4 @@
 import {
-  isProof,
   makeOpaqueSession,
   makeOTP,
   makePasskey,
@@ -78,10 +77,10 @@ const emailProof = await emailOtp.verify({
   ticket: emailTicket,
   otp: delivered.get("ripley@example.com") ?? "",
 });
-if (!isProof(emailProof)) throw new Error(emailProof.reason);
+if (!emailProof.success) throw new Error(emailProof.error);
 
 const emailSessionId = await opaque.make(
-  emailProof,
+  emailProof.data,
   async ({ identifier }) => ({
     userId: `user-for-${identifier}`,
   }),
@@ -95,11 +94,14 @@ const smsProof = await smsOtp.verify({
   ticket: smsTicket,
   otp: delivered.get("+15555550100") ?? "",
 });
-if (!isProof(smsProof)) throw new Error(smsProof.reason);
+if (!smsProof.success) throw new Error(smsProof.error);
 
-const smsSessionId = await opaque.make(smsProof, async ({ identifier }) => ({
-  userId: `user-for-${identifier}`,
-}));
+const smsSessionId = await opaque.make(
+  smsProof.data,
+  async ({ identifier }) => ({
+    userId: `user-for-${identifier}`,
+  }),
+);
 console.log("SESSION", await opaque.get(smsSessionId));
 
 // Passkey sign-up. 1. app creates the user, 2. begin with its id as the
@@ -117,11 +119,11 @@ const registered = await passkey.finishRegistration({
   credentialId: newCredentialId,
   publicKey: newKey,
 });
-if (!isProof(registered)) throw new Error(registered.reason);
+if (!registered.success) throw new Error(registered.error);
 authenticator.set(newCredentialId, { key: newKey, handle: signUp.user.id });
 
 const signUpSessionId = await opaque.make(
-  registered,
+  registered.data,
   async ({ userHandle }) => ({ userId: userHandle }),
 );
 console.log("SESSION", await opaque.get(signUpSessionId));
@@ -138,10 +140,10 @@ const authenticated = await passkey.finishAuthentication({
   signature: stored.key,
   userHandle: stored.handle,
 });
-if (!isProof(authenticated)) throw new Error(authenticated.reason);
+if (!authenticated.success) throw new Error(authenticated.error);
 
 const signInSessionId = await opaque.make(
-  authenticated,
+  authenticated.data,
   async ({ userHandle }) => ({ userId: userHandle }),
 );
 console.log("SESSION", await opaque.get(signInSessionId));
@@ -162,9 +164,9 @@ const added = await passkey.finishRegistration({
   credentialId: secondCredentialId,
   publicKey: secondKey,
 });
-if (!isProof(added)) throw new Error(added.reason);
+if (!added.success) throw new Error(added.error);
 authenticator.set(secondCredentialId, { key: secondKey, handle: add.user.id });
-console.log("ADDED", added.proven);
+console.log("ADDED", added.data.proven);
 
 // Signed session. Same three steps, no table. The token carries the session
 const signed = makeSignedSession<{ userId: string }>({
@@ -177,9 +179,9 @@ const signedProof = await emailOtp.verify({
   ticket: signedTicket,
   otp: delivered.get("ripley@example.com") ?? "",
 });
-if (!isProof(signedProof)) throw new Error(signedProof.reason);
+if (!signedProof.success) throw new Error(signedProof.error);
 
-const token = await signed.make(signedProof, async ({ identifier }) => ({
+const token = await signed.make(signedProof.data, async ({ identifier }) => ({
   userId: `user-for-${identifier}`,
 }));
 console.log("TOKEN", token);
@@ -208,7 +210,7 @@ console.log(
 
 // Reuse the proof. Rejected at runtime
 try {
-  await opaque.make(emailProof, async () => ({ userId: "someone-else" }));
+  await opaque.make(emailProof.data, async () => ({ userId: "someone-else" }));
 } catch (error) {
   console.log("REUSE", error instanceof Error ? error.message : error);
 }

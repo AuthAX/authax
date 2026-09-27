@@ -1,5 +1,5 @@
-import { fail } from "../failure";
-import { issueProof } from "../proof";
+import { fail, succeed, type Result } from "../failure";
+import { issueProof, type Proof } from "../proof";
 
 /**
  * Fake. No WebAuthn, the "signature" is the public key sent back as is.
@@ -63,18 +63,23 @@ export function makePasskey(args: {
       challenge: string;
       credentialId: string;
       publicKey: string;
-    }) => {
+    }): Promise<
+      Result<
+        Proof<{ credentialId: string; userHandle: string }>,
+        "unknown_challenge"
+      >
+    > => {
       const row = await args.takeChallenge(challenge);
 
-      if (row === null) return fail("challenge");
-      if (row.purpose !== "register") return fail("challenge");
+      if (row === null) return fail("unknown_challenge");
+      if (row.purpose !== "register") return fail("unknown_challenge");
 
       await args.storeCredential(credentialId, {
         publicKey,
         handle: row.handle,
       });
 
-      return issueProof({ credentialId, userHandle: row.handle });
+      return succeed(issueProof({ credentialId, userHandle: row.handle }));
     },
 
     beginAuthentication: async () => {
@@ -95,19 +100,27 @@ export function makePasskey(args: {
       credentialId: string;
       signature: string;
       userHandle: string;
-    }) => {
+    }): Promise<
+      Result<
+        Proof<{ credentialId: string; userHandle: string }>,
+        | "unknown_challenge"
+        | "unknown_credential"
+        | "wrong_signature"
+        | "wrong_handle"
+      >
+    > => {
       const row = await args.takeChallenge(challenge);
 
-      if (row === null) return fail("challenge");
-      if (row.purpose !== "authenticate") return fail("challenge");
+      if (row === null) return fail("unknown_challenge");
+      if (row.purpose !== "authenticate") return fail("unknown_challenge");
 
       const credential = await args.getCredential(credentialId);
 
-      if (credential === null) return fail("credential");
-      if (credential.publicKey !== signature) return fail("signature");
-      if (credential.handle !== userHandle) return fail("handle");
+      if (credential === null) return fail("unknown_credential");
+      if (credential.publicKey !== signature) return fail("wrong_signature");
+      if (credential.handle !== userHandle) return fail("wrong_handle");
 
-      return issueProof({ credentialId, userHandle });
+      return succeed(issueProof({ credentialId, userHandle }));
     },
   };
 }

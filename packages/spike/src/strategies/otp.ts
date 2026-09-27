@@ -1,5 +1,5 @@
-import { fail } from "../failure";
-import { issueProof } from "../proof";
+import { fail, succeed, type Result } from "../failure";
+import { issueProof, type Proof } from "../proof";
 
 export function makeOTP(args: {
   /** Stores an otp row under the ticket */
@@ -24,13 +24,21 @@ export function makeOTP(args: {
       return ticket;
     },
 
-    verify: async ({ ticket, otp }: { ticket: string; otp: string }) => {
+    verify: async ({
+      ticket,
+      otp,
+    }: {
+      ticket: string;
+      otp: string;
+    }): Promise<
+      Result<Proof<{ identifier: string }>, "unknown_ticket" | "wrong_otp">
+    > => {
       const row = await args.take(ticket);
 
-      if (row === null) return fail("unknown");
-      if (row.otp !== otp) return fail("mismatch");
+      if (row === null) return fail("unknown_ticket");
+      if (row.otp !== otp) return fail("wrong_otp");
 
-      return issueProof({ identifier: row.identifier });
+      return succeed(issueProof({ identifier: row.identifier }));
     },
   };
 }

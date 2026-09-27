@@ -1,5 +1,3 @@
-import type { Failure } from "./failure";
-
 /** Marks the type so a proof cannot be written by hand. Never exported. */
 const brand: unique symbol = Symbol("proof");
 
@@ -37,11 +35,4 @@ export function consumeProof<T>(proof: Proof<T>): T {
   }
 
   return proof.proven;
-}
-
-/** Narrows a strategy's result to the proof. The app's way to tell them apart. */
-export function isProof<T>(
-  value: Proof<T> | Failure<string>,
-): value is Proof<T> {
-  return issued.has(value);
 }
