@@ -4,7 +4,7 @@ import {
   makePasskey,
   makeSignedSessionManager,
 } from "./src/index";
-import { makeTable } from "./spike-helpers";
+import { makeTable } from "./src/demo/index";
 
 /**
  * App

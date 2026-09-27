@@ -1,4 +1,4 @@
-import { makeTable } from "./spike-helpers";
+import { makeTable } from "./src/demo/index";
 
 const _email = "ripley@example.com";
 let _interceptedOneTimePasscode = "";
