@@ -25,13 +25,17 @@ const authenticator = new Map<string, { key: string; handle: string }>();
 const delivered = new Map<string, string>();
 
 const opaque = makeOpaqueSession<{ userId: string }>({
-  store: (row) => sessionsTable.insert(row),
-  get: (id) => sessionsTable.get(id),
+  store: async (token, row) => {
+    await sessionsTable.put(token, row);
+  },
+  get: (token) => sessionsTable.get(token),
 });
 
 const emailOtp = makeOTP({
-  store: (row) => otpsTable.insert(row),
-  take: (id) => otpsTable.delete(id),
+  store: async (ticket, row) => {
+    await otpsTable.put(ticket, row);
+  },
+  take: (ticket) => otpsTable.delete(ticket),
   send: async (identifier, otp) => {
     console.log("email to:", identifier, "otp:", otp);
     delivered.set(identifier, otp);
@@ -39,8 +43,10 @@ const emailOtp = makeOTP({
 });
 
 const smsOtp = makeOTP({
-  store: (row) => otpsTable.insert(row),
-  take: (id) => otpsTable.delete(id),
+  store: async (ticket, row) => {
+    await otpsTable.put(ticket, row);
+  },
+  take: (ticket) => otpsTable.delete(ticket),
   send: async (identifier, otp) => {
     console.log("sms to:", identifier, "otp:", otp);
     delivered.set(identifier, otp);
@@ -50,12 +56,14 @@ const smsOtp = makeOTP({
 const passkey = makePasskey({
   rpId: "localhost",
   rpName: "Spike",
-  storeChallenge: (row) => challengesTable.insert(row),
-  takeChallenge: (id) => challengesTable.delete(id),
-  storeCredential: async ({ id, publicKey, handle }) => {
-    await credentialsTable.put(id, { publicKey, handle });
+  storeChallenge: async (challenge, row) => {
+    await challengesTable.put(challenge, row);
   },
-  getCredential: (id) => credentialsTable.get(id),
+  takeChallenge: (challenge) => challengesTable.delete(challenge),
+  storeCredential: async (credentialId, row) => {
+    await credentialsTable.put(credentialId, row);
+  },
+  getCredential: (credentialId) => credentialsTable.get(credentialId),
 });
 
 //
@@ -65,10 +73,10 @@ const passkey = makePasskey({
 console.log("-".repeat(80));
 
 // Email. 1. request, 2. verify, 3. session
-const emailOtpId = await emailOtp.send("ripley@example.com");
+const emailTicket = await emailOtp.send("ripley@example.com");
 
 const emailProof = await emailOtp.verify({
-  id: emailOtpId,
+  ticket: emailTicket,
   otp: delivered.get("ripley@example.com") ?? "",
 });
 if (!isProof(emailProof)) throw new Error(emailProof.reason);
@@ -82,10 +90,10 @@ const emailSessionId = await opaque.make(
 console.log("SESSION", await opaque.get(emailSessionId));
 
 // SMS. Same three steps, other instance
-const smsOtpId = await smsOtp.send("+15555550100");
+const smsTicket = await smsOtp.send("+15555550100");
 
 const smsProof = await smsOtp.verify({
-  id: smsOtpId,
+  ticket: smsTicket,
   otp: delivered.get("+15555550100") ?? "",
 });
 if (!isProof(smsProof)) throw new Error(smsProof.reason);
@@ -165,9 +173,9 @@ const signed = makeSignedSession<{ userId: string }>({
   ttl: 60 * 60 * 1000,
 });
 
-const signedOtpId = await emailOtp.send("ripley@example.com");
+const signedTicket = await emailOtp.send("ripley@example.com");
 const signedProof = await emailOtp.verify({
-  id: signedOtpId,
+  ticket: signedTicket,
   otp: delivered.get("ripley@example.com") ?? "",
 });
 if (!isProof(signedProof)) throw new Error(signedProof.reason);
@@ -180,9 +188,15 @@ console.log("SIGNED SESSION", await signed.get(token));
 console.log("TAMPERED", await signed.get(`${token.slice(0, -2)}xx`));
 
 // Failures come back with a reason
-const wrongOtpId = await emailOtp.send("ripley@example.com");
-console.log("WRONG", await emailOtp.verify({ id: wrongOtpId, otp: "nope" }));
-console.log("USED", await emailOtp.verify({ id: wrongOtpId, otp: "nope" }));
+const wrongTicket = await emailOtp.send("ripley@example.com");
+console.log(
+  "WRONG",
+  await emailOtp.verify({ ticket: wrongTicket, otp: "nope" }),
+);
+console.log(
+  "USED",
+  await emailOtp.verify({ ticket: wrongTicket, otp: "nope" }),
+);
 console.log(
   "STRANGER",
   await passkey.finishAuthentication({

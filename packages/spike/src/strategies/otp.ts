@@ -1,25 +1,30 @@
 import { Proof, fail } from "../proof";
 
 export function makeOTP(args: {
-  /** Stores an otp row and returns its id */
-  store: (row: { identifier: string; otp: string }) => Promise<{ id: string }>;
-  /** Removes an otp row by id and returns it, atomically. Null when there is none. */
-  take: (id: string) => Promise<{ identifier: string; otp: string } | null>;
+  /** Stores an otp row under the ticket */
+  store: (
+    ticket: string,
+    row: { identifier: string; otp: string },
+  ) => Promise<void>;
+  /** Removes the otp row for a ticket and returns it, atomically. Null when there is none. */
+  take: (ticket: string) => Promise<{ identifier: string; otp: string } | null>;
   /** Delivers the otp to the identifier, an email address or a phone number */
   send: (identifier: string, otp: string) => Promise<void>;
 }) {
   return {
+    /** Returns the ticket the requesting client holds until it verifies */
     send: async (identifier: string) => {
+      const ticket = crypto.randomUUID();
       const otp = crypto.randomUUID();
-      const { id } = await args.store({ identifier, otp });
 
+      await args.store(ticket, { identifier, otp });
       await args.send(identifier, otp);
 
-      return id;
+      return ticket;
     },
 
-    verify: async ({ id, otp }: { id: string; otp: string }) => {
-      const row = await args.take(id);
+    verify: async ({ ticket, otp }: { ticket: string; otp: string }) => {
+      const row = await args.take(ticket);
 
       if (row === null) return fail("unknown");
       if (row.otp !== otp) return fail("mismatch");

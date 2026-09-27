@@ -16,19 +16,18 @@ export function makePasskey(args: {
   rpId: string;
   /** The relying party name, shown by the authenticator */
   rpName: string;
-  /** Stores a challenge row and returns its id, which is the challenge */
-  storeChallenge: (row: Challenge) => Promise<{ id: string }>;
-  /** Removes a challenge row by id and returns it, atomically. Null when there is none. */
-  takeChallenge: (id: string) => Promise<Challenge | null>;
+  /** Stores a challenge row under the challenge */
+  storeChallenge: (challenge: string, row: Challenge) => Promise<void>;
+  /** Removes the row for a challenge and returns it, atomically. Null when there is none. */
+  takeChallenge: (challenge: string) => Promise<Challenge | null>;
   /** Stores a credential row under the id the authenticator chose */
-  storeCredential: (row: {
-    id: string;
-    publicKey: string;
-    handle: string;
-  }) => Promise<void>;
-  /** Reads a credential row by id, null when there is none */
+  storeCredential: (
+    credentialId: string,
+    row: { publicKey: string; handle: string },
+  ) => Promise<void>;
+  /** Reads the credential row for an id, null when there is none */
   getCredential: (
-    id: string,
+    credentialId: string,
   ) => Promise<{ publicKey: string; handle: string } | null>;
 }) {
   return {
@@ -44,10 +43,12 @@ export function makePasskey(args: {
       handle: string;
       name: string;
     }) => {
-      const { id } = await args.storeChallenge({ purpose: "register", handle });
+      const challenge = crypto.randomUUID();
+
+      await args.storeChallenge(challenge, { purpose: "register", handle });
 
       return {
-        challenge: id,
+        challenge,
         rp: { id: args.rpId, name: args.rpName },
         user: { id: handle, name },
       };
@@ -67,8 +68,7 @@ export function makePasskey(args: {
       if (row === null) return fail("challenge");
       if (row.purpose !== "register") return fail("challenge");
 
-      await args.storeCredential({
-        id: credentialId,
+      await args.storeCredential(credentialId, {
         publicKey,
         handle: row.handle,
       });
@@ -77,9 +77,11 @@ export function makePasskey(args: {
     },
 
     beginAuthentication: async () => {
-      const { id } = await args.storeChallenge({ purpose: "authenticate" });
+      const challenge = crypto.randomUUID();
 
-      return { challenge: id, rpId: args.rpId };
+      await args.storeChallenge(challenge, { purpose: "authenticate" });
+
+      return { challenge, rpId: args.rpId };
     },
 
     finishAuthentication: async ({
