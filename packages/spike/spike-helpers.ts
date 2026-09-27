@@ -1,4 +1,4 @@
-export function createTable<V extends object>() {
+export function makeTable<V extends object>() {
   const data = new Map<string, V & { id: string }>();
 
   const insert = (row: V) => {

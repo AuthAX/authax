@@ -5,16 +5,16 @@ import {
   makeSignedSession,
   type Challenge,
 } from "./src/index";
-import { createTable } from "./spike-helpers";
+import { makeTable } from "./spike-helpers";
 
 /**
  * App
  */
 
-const sessionsTable = createTable<{ userId: string }>();
-const otpsTable = createTable<{ identifier: string; otp: string }>();
-const challengesTable = createTable<Challenge>();
-const credentialsTable = createTable<{ publicKey: string; handle: string }>();
+const sessionsTable = makeTable<{ userId: string }>();
+const otpsTable = makeTable<{ identifier: string; otp: string }>();
+const challengesTable = makeTable<Challenge>();
+const credentialsTable = makeTable<{ publicKey: string; handle: string }>();
 
 // The fake authenticator in the browser. Credential id to its key and handle.
 const authenticator = new Map<string, { key: string; handle: string }>();

@@ -1,16 +1,16 @@
-import { createTable } from "./spike-helpers";
+import { makeTable } from "./spike-helpers";
 
 const _email = "ripley@example.com";
 let _interceptedOneTimePasscode = "";
 
 // The app's own table. Keyed by a random id, email is a column.
-const usersTable = createTable<{ email: string }>();
+const usersTable = makeTable<{ email: string }>();
 
 // Opaque session. Remembers the user id under a random id.
-const sessionsTable = createTable<{ userId: string }>();
+const sessionsTable = makeTable<{ userId: string }>();
 
 // OTP. One row per sent otp, keyed by a random id. Checked once.
-const otpsTable = createTable<{ email: string; otp: string }>();
+const otpsTable = makeTable<{ email: string; otp: string }>();
 
 /**
  * Session
