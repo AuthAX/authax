@@ -1,211 +1,12 @@
+import {
+  isProof,
+  makeOpaqueSession,
+  makeOTP,
+  makePasskey,
+  type Challenge,
+  type Proof,
+} from "./src/index";
 import { createTable } from "./spike-helpers";
-
-/**
- * Proof
- */
-
-/**
- * What a strategy proved. Only a strategy can construct one, and a session
- * cannot be made without one. In a package, only the type is exported, so
- * the factory is reachable from strategies alone.
- */
-class Proof<T> {
-  readonly proven: T;
-  private used = false;
-
-  private constructor(proven: T) {
-    this.proven = proven;
-  }
-
-  static prove<T>(proven: T) {
-    return new Proof(proven);
-  }
-
-  /** A proof is spent by the one call that uses it. A second call throws. */
-  consume() {
-    if (this.used) throw new Error("proof already used");
-    this.used = true;
-  }
-}
-
-/** An expected failure the app branches on. The reason names what did not hold. */
-type Failure<Reason extends string> = { reason: Reason };
-
-function fail<Reason extends string>(reason: Reason): Failure<Reason> {
-  return { reason };
-}
-
-/**
- * Session factory
- */
-
-/** Session is what the app decides a session is, a user id and whatever else it wants to keep */
-function makeOpaqueSession<Session extends object>(args: {
-  /** Stores a session row and returns its id */
-  store: (row: Session) => Promise<{ id: string }>;
-  /** Reads a session row by id, null when there is none */
-  get: (id: string) => Promise<(Session & { id: string }) | null>;
-}) {
-  return {
-    make: async <T>(
-      proof: Proof<T>,
-      resolve: (proven: T) => Promise<Session>,
-    ) => {
-      if (!(proof instanceof Proof)) throw new Error("not a proof");
-      proof.consume();
-
-      const { id } = await args.store(await resolve(proof.proven));
-
-      return id;
-    },
-
-    get: (id: string) => args.get(id),
-  };
-}
-
-/**
- * OTP factory
- */
-
-function makeOTP(args: {
-  /** Stores an otp row and returns its id */
-  store: (row: { identifier: string; otp: string }) => Promise<{ id: string }>;
-  /** Removes an otp row by id and returns it, atomically. Null when there is none. */
-  take: (id: string) => Promise<{ identifier: string; otp: string } | null>;
-  /** Delivers the otp to the identifier, an email address or a phone number */
-  send: (identifier: string, otp: string) => Promise<void>;
-}) {
-  return {
-    send: async (identifier: string) => {
-      const otp = crypto.randomUUID();
-      const { id } = await args.store({ identifier, otp });
-
-      await args.send(identifier, otp);
-
-      return id;
-    },
-
-    verify: async ({ id, otp }: { id: string; otp: string }) => {
-      const row = await args.take(id);
-
-      if (row === null) return fail("unknown");
-      if (row.otp !== otp) return fail("mismatch");
-
-      return Proof.prove({ identifier: row.identifier });
-    },
-  };
-}
-
-/**
- * Passkey factory
- *
- * Fake. No WebAuthn, the "signature" is the public key sent back as is.
- * Only the shape of the two ceremonies is real. The library stores the
- * credential with the handle the app gave it and hands the handle back on
- * authentication. What the handle means is the app's business.
- */
-
-/** A registration challenge carries the handle until the ceremony finishes */
-type Challenge =
-  { purpose: "register"; handle: string } | { purpose: "authenticate" };
-
-function makePasskey(args: {
-  /** The relying party id, the domain passkeys are bound to */
-  rpId: string;
-  /** The relying party name, shown by the authenticator */
-  rpName: string;
-  /** Stores a challenge row and returns its id, which is the challenge */
-  storeChallenge: (row: Challenge) => Promise<{ id: string }>;
-  /** Removes a challenge row by id and returns it, atomically. Null when there is none. */
-  takeChallenge: (id: string) => Promise<Challenge | null>;
-  /** Stores a credential row under the id the authenticator chose */
-  storeCredential: (row: {
-    id: string;
-    publicKey: string;
-    handle: string;
-  }) => Promise<void>;
-  /** Reads a credential row by id, null when there is none */
-  getCredential: (
-    id: string,
-  ) => Promise<{ publicKey: string; handle: string } | null>;
-}) {
-  return {
-    /**
-     * handle is the app's stable id for the person, the authenticator keeps it
-     * with the credential and returns it on authentication. name is what the
-     * authenticator shows, an email or a username.
-     */
-    beginRegistration: async ({
-      handle,
-      name,
-    }: {
-      handle: string;
-      name: string;
-    }) => {
-      const { id } = await args.storeChallenge({ purpose: "register", handle });
-
-      return {
-        challenge: id,
-        rp: { id: args.rpId, name: args.rpName },
-        user: { id: handle, name },
-      };
-    },
-
-    finishRegistration: async ({
-      challenge,
-      credentialId,
-      publicKey,
-    }: {
-      challenge: string;
-      credentialId: string;
-      publicKey: string;
-    }) => {
-      const row = await args.takeChallenge(challenge);
-
-      if (row === null) return fail("challenge");
-      if (row.purpose !== "register") return fail("challenge");
-
-      await args.storeCredential({
-        id: credentialId,
-        publicKey,
-        handle: row.handle,
-      });
-
-      return Proof.prove({ credentialId, userHandle: row.handle });
-    },
-
-    beginAuthentication: async () => {
-      const { id } = await args.storeChallenge({ purpose: "authenticate" });
-
-      return { challenge: id, rpId: args.rpId };
-    },
-
-    finishAuthentication: async ({
-      challenge,
-      credentialId,
-      signature,
-      userHandle,
-    }: {
-      challenge: string;
-      credentialId: string;
-      signature: string;
-      userHandle: string;
-    }) => {
-      const row = await args.takeChallenge(challenge);
-
-      if (row === null) return fail("challenge");
-      if (row.purpose !== "authenticate") return fail("challenge");
-
-      const credential = await args.getCredential(credentialId);
-
-      if (credential === null) return fail("credential");
-      if (credential.publicKey !== signature) return fail("signature");
-      if (credential.handle !== userHandle) return fail("handle");
-
-      return Proof.prove({ credentialId, userHandle });
-    },
-  };
-}
 
 /**
  * App
@@ -269,7 +70,7 @@ const emailProof = await emailOtp.verify({
   id: emailOtpId,
   otp: delivered.get("ripley@example.com") ?? "",
 });
-if (!(emailProof instanceof Proof)) throw new Error(emailProof.reason);
+if (!isProof(emailProof)) throw new Error(emailProof.reason);
 
 const emailSessionId = await opaque.make(
   emailProof,
@@ -286,7 +87,7 @@ const smsProof = await smsOtp.verify({
   id: smsOtpId,
   otp: delivered.get("+15555550100") ?? "",
 });
-if (!(smsProof instanceof Proof)) throw new Error(smsProof.reason);
+if (!isProof(smsProof)) throw new Error(smsProof.reason);
 
 const smsSessionId = await opaque.make(smsProof, async ({ identifier }) => ({
   userId: `user-for-${identifier}`,
@@ -308,7 +109,7 @@ const registered = await passkey.finishRegistration({
   credentialId: newCredentialId,
   publicKey: newKey,
 });
-if (!(registered instanceof Proof)) throw new Error(registered.reason);
+if (!isProof(registered)) throw new Error(registered.reason);
 authenticator.set(newCredentialId, { key: newKey, handle: signUp.user.id });
 
 const signUpSessionId = await opaque.make(
@@ -329,7 +130,7 @@ const authenticated = await passkey.finishAuthentication({
   signature: stored.key,
   userHandle: stored.handle,
 });
-if (!(authenticated instanceof Proof)) throw new Error(authenticated.reason);
+if (!isProof(authenticated)) throw new Error(authenticated.reason);
 
 const signInSessionId = await opaque.make(
   authenticated,
@@ -353,7 +154,7 @@ const added = await passkey.finishRegistration({
   credentialId: secondCredentialId,
   publicKey: secondKey,
 });
-if (!(added instanceof Proof)) throw new Error(added.reason);
+if (!isProof(added)) throw new Error(added.reason);
 authenticator.set(secondCredentialId, { key: secondKey, handle: add.user.id });
 console.log("ADDED", added.proven);
 
@@ -378,8 +179,13 @@ try {
   console.log("REUSE", error instanceof Error ? error.message : error);
 }
 
-// The guard. Never called, it exists to show what does not compile.
+// The guards. Never called, they exist to show what does not compile.
 export function withoutProof(userId: string) {
   // @ts-expect-error a session cannot be made without a proof
   return opaque.make({ userId }, async () => ({ userId }));
+}
+
+export function mintProof() {
+  // @ts-expect-error the app cannot mint a proof, only the type is exported
+  return Proof.prove({ userId: "anyone" });
 }
