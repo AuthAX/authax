@@ -242,6 +242,9 @@
         "next",
       ],
     },
+    "packages/spike": {
+      "name": "@repo/spike",
+    },
   },
   "trustedDependencies": [
     "sharp",
@@ -508,6 +511,8 @@
     "@repo/shared-react": ["@repo/shared-react@workspace:examples/shared/react"],
 
     "@repo/shared-webauthn": ["@repo/shared-webauthn@workspace:examples/shared/webauthn"],
+
+    "@repo/spike": ["@repo/spike@workspace:packages/spike"],
 
     "@rolldown/binding-android-arm-eabi": ["@rolldown/binding-android-arm-eabi@1.2.11", "", { "os": "android", "cpu": "arm" }, "sha512-A5kXfGKvKWWZE0TtPrfsvT+q4Y5d1QG8gGUzpYjGydM+fARM9MuX90PrXYXe0XbsDVgyxxNzHo6giCj90bsFNw=="],
 
