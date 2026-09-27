@@ -41,3 +41,4 @@ Ticket is the only option where an OTP is bound to the client that asked and whe
 ## Revisit
 
 - Opening the library to bespoke strategies and session managers, by exporting `issueProof` and `consumeProof` or a `makeStrategy` factory around them. Either hands the shortcut back, so only on real demand.
+- Type contracts. For now the types are inferred from the functions, which shows what is needed and what is not. Once the shapes settle, a new strategy or session manager starts from its contract type, as in `const makeThing: Contract = (args) => {}`.

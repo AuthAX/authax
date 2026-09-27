@@ -1,5 +1,4 @@
 import { consumeProof, type Proof } from "../proof";
-import type { SessionManager } from "./contract";
 
 /**
  * Stateless. The session travels inside the token, signed so it cannot be
@@ -21,11 +20,9 @@ export function makeSignedSessionManager<Session extends object>(args: {
   );
 
   return {
-    make: async <T>(
-      proof: Proof<T>,
-      resolve: (proven: T) => Promise<Session>,
-    ) => {
-      const session = await resolve(consumeProof(proof));
+    make: async (proof: Proof<unknown>, session: Session) => {
+      consumeProof(proof);
+
       const payload = encode(
         JSON.stringify({ session, exp: Date.now() + args.ttl }),
       );
@@ -61,7 +58,7 @@ export function makeSignedSessionManager<Session extends object>(args: {
 
       return session;
     },
-  } satisfies SessionManager<Session>;
+  };
 }
 
 function bytes(value: string) {

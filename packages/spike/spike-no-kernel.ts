@@ -10,7 +10,7 @@ import { makeTable } from "./spike-helpers";
  * App
  */
 
-const sessionsTable = makeTable<{ userId: string }>();
+const sessionsTable = makeTable<{ userId: string; expiresAt: number }>();
 const otpsTable = makeTable<{
   identifier: string;
   otp: string;
@@ -33,6 +33,7 @@ const opaque = makeOpaqueSessionManager<{ userId: string }>({
     await sessionsTable.put(token, row);
   },
   get: (token) => sessionsTable.get(token),
+  ttl: 30 * 24 * 60 * 60 * 1000,
 });
 
 const emailOtp = makeOTP({
@@ -89,12 +90,9 @@ const emailProof = await emailOtp.verify({
 });
 if (!emailProof.success) throw new Error(emailProof.error);
 
-const emailSessionId = await opaque.make(
-  emailProof.data,
-  async ({ identifier }) => ({
-    userId: `user-for-${identifier}`,
-  }),
-);
+const emailSessionId = await opaque.make(emailProof.data, {
+  userId: `user-for-${emailProof.data.proven.identifier}`,
+});
 console.log("SESSION", await opaque.get(emailSessionId));
 
 // SMS. Same three steps, other instance
@@ -106,12 +104,9 @@ const smsProof = await smsOtp.verify({
 });
 if (!smsProof.success) throw new Error(smsProof.error);
 
-const smsSessionId = await opaque.make(
-  smsProof.data,
-  async ({ identifier }) => ({
-    userId: `user-for-${identifier}`,
-  }),
-);
+const smsSessionId = await opaque.make(smsProof.data, {
+  userId: `user-for-${smsProof.data.proven.identifier}`,
+});
 console.log("SESSION", await opaque.get(smsSessionId));
 
 // Passkey sign-up. 1. app creates the user, 2. begin with its id as the
@@ -132,10 +127,9 @@ const registered = await passkey.finishRegistration({
 if (!registered.success) throw new Error(registered.error);
 authenticator.set(newCredentialId, { key: newKey, handle: signUp.user.id });
 
-const signUpSessionId = await opaque.make(
-  registered.data,
-  async ({ userHandle }) => ({ userId: userHandle }),
-);
+const signUpSessionId = await opaque.make(registered.data, {
+  userId: registered.data.proven.userHandle,
+});
 console.log("SESSION", await opaque.get(signUpSessionId));
 
 // Passkey sign-in. 1. begin, 2. browser signs, 3. finish, 4. session
@@ -152,10 +146,9 @@ const authenticated = await passkey.finishAuthentication({
 });
 if (!authenticated.success) throw new Error(authenticated.error);
 
-const signInSessionId = await opaque.make(
-  authenticated.data,
-  async ({ userHandle }) => ({ userId: userHandle }),
-);
+const signInSessionId = await opaque.make(authenticated.data, {
+  userId: authenticated.data.proven.userHandle,
+});
 console.log("SESSION", await opaque.get(signInSessionId));
 
 // Add a passkey while signed in. The session says who, its user id is the
@@ -192,9 +185,9 @@ const signedProof = await emailOtp.verify({
 });
 if (!signedProof.success) throw new Error(signedProof.error);
 
-const token = await signed.make(signedProof.data, async ({ identifier }) => ({
-  userId: `user-for-${identifier}`,
-}));
+const token = await signed.make(signedProof.data, {
+  userId: `user-for-${signedProof.data.proven.identifier}`,
+});
 console.log("TOKEN", token);
 console.log("SIGNED SESSION", await signed.get(token));
 console.log("TAMPERED", await signed.get(`${token.slice(0, -2)}xx`));
@@ -221,7 +214,7 @@ console.log(
 
 // Reuse the proof. Rejected at runtime
 try {
-  await opaque.make(emailProof.data, async () => ({ userId: "someone-else" }));
+  await opaque.make(emailProof.data, { userId: "someone-else" });
 } catch (error) {
   console.log("REUSE", error instanceof Error ? error.message : error);
 }
@@ -229,5 +222,5 @@ try {
 // The guard. Never called, it exists to show what does not compile.
 export function withoutProof(userId: string) {
   // @ts-expect-error a session cannot be made without a proof
-  return opaque.make({ userId }, async () => ({ userId }));
+  return opaque.make({ userId }, { userId });
 }

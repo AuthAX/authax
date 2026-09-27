@@ -26,13 +26,11 @@ export function issueProof<T extends object>(proven: T): Proof<T> {
 }
 
 /**
- * A session manager starts by calling this. Returns what was proven. Throws
- * for a proof that was never issued or was already consumed.
+ * A session manager starts by calling this. Throws for a proof that was
+ * never issued or was already consumed.
  */
-export function consumeProof<T>(proof: Proof<T>): T {
+export function consumeProof(proof: Proof<unknown>): void {
   if (!issued.delete(proof)) {
     throw new Error("not a proof, or already consumed");
   }
-
-  return proof.proven;
 }

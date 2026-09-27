@@ -18,5 +18,5 @@ void written;
 void sessionManager.make(
   // @ts-expect-error a session cannot be made without a proof
   { proven: { identifier: "victim@example.com" } },
-  async () => ({ userId: "victim" }),
+  { userId: "victim" },
 );
