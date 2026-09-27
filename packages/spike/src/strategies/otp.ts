@@ -1,4 +1,5 @@
-import { Proof, fail } from "../proof";
+import { fail } from "../failure";
+import { issueProof } from "../proof";
 
 export function makeOTP(args: {
   /** Stores an otp row under the ticket */
@@ -29,7 +30,7 @@ export function makeOTP(args: {
       if (row === null) return fail("unknown");
       if (row.otp !== otp) return fail("mismatch");
 
-      return Proof.prove({ identifier: row.identifier });
+      return issueProof({ identifier: row.identifier });
     },
   };
 }

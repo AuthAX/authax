@@ -5,7 +5,6 @@ import {
   makePasskey,
   makeSignedSession,
   type Challenge,
-  type Proof,
 } from "./src/index";
 import { createTable } from "./spike-helpers";
 
@@ -214,13 +213,8 @@ try {
   console.log("REUSE", error instanceof Error ? error.message : error);
 }
 
-// The guards. Never called, they exist to show what does not compile.
+// The guard. Never called, it exists to show what does not compile.
 export function withoutProof(userId: string) {
   // @ts-expect-error a session cannot be made without a proof
   return opaque.make({ userId }, async () => ({ userId }));
-}
-
-export function mintProof() {
-  // @ts-expect-error the app cannot mint a proof, only the type is exported
-  return Proof.prove({ userId: "anyone" });
 }

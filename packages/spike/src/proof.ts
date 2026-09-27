@@ -1,44 +1,47 @@
+import type { Failure } from "./failure";
+
+/** Marks the type so a proof cannot be written by hand. Never exported. */
+const brand: unique symbol = Symbol("proof");
+
 /**
- * What a strategy proved. Only a strategy can construct one, and a session
- * cannot be made without one. The public entry exports the type only, so
- * the app can name a proof but never make one.
+ * A receipt for what a strategy proved. A strategy issues one and a session
+ * consumes it. The library remembers every proof it issues and consumes only
+ * those, so an object that only looks like a proof is refused. A proof is an
+ * object in the server's memory and never leaves the process that issued it,
+ * so it is issued and consumed in the same call.
  */
-export class Proof<T> {
-  readonly proven: T;
-  private used = false;
+export type Proof<T> = { readonly proven: T; readonly [brand]: true };
 
-  private constructor(proven: T) {
-    this.proven = proven;
-  }
+/** Every proof issued and not yet consumed */
+const issued = new WeakSet<object>();
 
-  static prove<T>(proven: T) {
-    return new Proof(proven);
-  }
+/** A strategy ends by calling this. Nothing else makes a proof. */
+export function issueProof<T extends object>(proven: T): Proof<T> {
+  const proof = Object.freeze({
+    proven: Object.freeze({ ...proven }),
+    [brand]: true as const,
+  });
 
-  /**
-   * Spends a proof and returns what it proved. Every session implementation
-   * calls this first, so the rule lives here and not in each of them. A
-   * second call with the same proof throws.
-   */
-  static spend<T>(proof: Proof<T>): T {
-    if (!(proof instanceof Proof)) throw new Error("not a proof");
-    if (proof.used) throw new Error("proof already used");
-    proof.used = true;
+  issued.add(proof);
 
-    return proof.proven;
-  }
+  return proof;
 }
 
-/** An expected failure the app branches on. The reason names what did not hold. */
-export type Failure<Reason extends string> = { reason: Reason };
+/**
+ * A session starts by calling this. Returns what was proven. Throws for a
+ * proof that was never issued or was already consumed.
+ */
+export function consumeProof<T>(proof: Proof<T>): T {
+  if (!issued.delete(proof)) {
+    throw new Error("not a proof, or already consumed");
+  }
 
-export function fail<Reason extends string>(reason: Reason): Failure<Reason> {
-  return { reason };
+  return proof.proven;
 }
 
 /** Narrows a strategy's result to the proof. The app's way to tell them apart. */
 export function isProof<T>(
   value: Proof<T> | Failure<string>,
 ): value is Proof<T> {
-  return value instanceof Proof;
+  return issued.has(value);
 }

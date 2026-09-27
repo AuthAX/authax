@@ -1,4 +1,4 @@
-import { Proof } from "../proof";
+import { consumeProof, type Proof } from "../proof";
 import type { SessionContract } from "./contract";
 
 /** The token is a random string the row is stored under. Ending a session is deleting the row. */
@@ -13,7 +13,7 @@ export function makeOpaqueSession<Session extends object>(args: {
       proof: Proof<T>,
       resolve: (proven: T) => Promise<Session>,
     ) => {
-      const session = await resolve(Proof.spend(proof));
+      const session = await resolve(consumeProof(proof));
       const token = crypto.randomUUID();
 
       await args.store(token, session);

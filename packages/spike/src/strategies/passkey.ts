@@ -1,4 +1,5 @@
-import { Proof, fail } from "../proof";
+import { fail } from "../failure";
+import { issueProof } from "../proof";
 
 /**
  * Fake. No WebAuthn, the "signature" is the public key sent back as is.
@@ -73,7 +74,7 @@ export function makePasskey(args: {
         handle: row.handle,
       });
 
-      return Proof.prove({ credentialId, userHandle: row.handle });
+      return issueProof({ credentialId, userHandle: row.handle });
     },
 
     beginAuthentication: async () => {
@@ -106,7 +107,7 @@ export function makePasskey(args: {
       if (credential.publicKey !== signature) return fail("signature");
       if (credential.handle !== userHandle) return fail("handle");
 
-      return Proof.prove({ credentialId, userHandle });
+      return issueProof({ credentialId, userHandle });
     },
   };
 }

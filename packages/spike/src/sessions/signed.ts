@@ -1,4 +1,4 @@
-import { Proof } from "../proof";
+import { consumeProof, type Proof } from "../proof";
 import type { SessionContract } from "./contract";
 
 /**
@@ -25,7 +25,7 @@ export function makeSignedSession<Session extends object>(args: {
       proof: Proof<T>,
       resolve: (proven: T) => Promise<Session>,
     ) => {
-      const session = await resolve(Proof.spend(proof));
+      const session = await resolve(consumeProof(proof));
       const payload = encode(
         JSON.stringify({ session, exp: Date.now() + args.ttl }),
       );
