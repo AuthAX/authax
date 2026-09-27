@@ -1,8 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { db } from "./db";
-import { auth, emailOtp } from "./auth";
+import { emailOtp, sessionManager } from "./auth";
 import { sessionCookie } from "./session-cookie";
+
+/** The session behind the request's cookie, null when there is none */
+async function getIdentity() {
+  const token = sessionCookie.get();
+
+  return token === null ? null : sessionManager.get(token);
+}
 
 /**
  * Request OTP schema
@@ -15,16 +22,21 @@ export const requestOtpSchema = z.object({
  * Verify OTP schema
  */
 export const verifyOtpSchema = z.object({
-  identifier: z.email(),
+  ticket: z.string(),
   otp: z.string().length(6),
 });
 
 /**
  * Send OTP to identifier server function
+ *
+ * Returns the ticket the client sends back with the OTP.
  */
 export const requestOtp = createServerFn({ method: "POST" })
   .validator(requestOtpSchema)
-  .handler(({ data }) => auth.strategies.email.request(data));
+  .handler(async ({ data }) => ({
+    success: true,
+    ticket: await emailOtp.send(data.identifier),
+  }));
 
 /**
  * Verify OTP server function
@@ -36,13 +48,17 @@ export const requestOtp = createServerFn({ method: "POST" })
 export const verifyOtp = createServerFn({ method: "POST" })
   .validator(verifyOtpSchema)
   .handler(async ({ data }) => {
-    const result = await auth.strategies.email.authenticate(data);
+    const result = await emailOtp.verify(data);
 
     if (!result.success) return { success: false };
 
-    sessionCookie.set(result.data.session.token, result.data.session.expiresAt);
+    const user = db.users.upsert(result.data.proven.identifier);
 
-    return { success: true, isNew: result.data.user.isNew };
+    sessionCookie.set(
+      await sessionManager.make(result.data, { userId: user.userId }),
+    );
+
+    return { success: true, isNew: user.isNew };
   });
 
 /**
@@ -54,13 +70,16 @@ export const verifyOtp = createServerFn({ method: "POST" })
 export const changeEmail = createServerFn({ method: "POST" })
   .validator(verifyOtpSchema)
   .handler(async ({ data }) => {
-    const identity = await auth.session.get(sessionCookie.get());
+    const identity = await getIdentity();
     if (!identity) return { success: false };
 
-    const verified = await emailOtp.verify(data.identifier, data.otp);
-    if (!verified) return { success: false };
+    const verified = await emailOtp.verify(data);
+    if (!verified.success) return { success: false };
 
-    const user = db.users.updateEmail(identity.userId, data.identifier);
+    const user = db.users.updateEmail(
+      identity.userId,
+      verified.data.proven.identifier,
+    );
     if (!user) return { success: false };
 
     return { success: true, viewer: user };
@@ -72,7 +91,9 @@ export const changeEmail = createServerFn({ method: "POST" })
  * Ends the current session and clears the session cookie.
  */
 export const signOut = createServerFn({ method: "POST" }).handler(async () => {
-  await auth.session.end(sessionCookie.get());
+  const token = sessionCookie.get();
+
+  if (token !== null) await sessionManager.end(token);
   sessionCookie.clear();
 });
 
@@ -83,7 +104,7 @@ export const signOut = createServerFn({ method: "POST" }).handler(async () => {
  */
 export const signOutAll = createServerFn({ method: "POST" }).handler(
   async () => {
-    const identity = await auth.session.get(sessionCookie.get());
+    const identity = await getIdentity();
     if (identity) db.sessions.deleteAllForUser(identity.userId);
     sessionCookie.clear();
   },
@@ -95,7 +116,7 @@ export const signOutAll = createServerFn({ method: "POST" }).handler(
  * Returns the current user if authenticated, or null otherwise.
  */
 export const getViewer = createServerFn().handler(async () => {
-  const identity = await auth.session.get(sessionCookie.get());
+  const identity = await getIdentity();
 
   return identity ? (db.users.get(identity.userId) ?? null) : null;
 });

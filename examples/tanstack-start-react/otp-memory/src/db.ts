@@ -4,13 +4,22 @@
  * Simple in-memory stores for demonstration purposes. In a real app these
  * would be replaced with database queries.
  */
-import type { OtpRecord, SessionRecord } from "authax";
+
+type SessionRow = { id: string; userId: string; expiresAt: Date };
+
+type OtpRow = {
+  id: string;
+  email: string;
+  otp: string;
+  expiresAt: Date;
+  attemptsLeft: number;
+};
 
 const users = new Map<string, { userId: string; email: string }>();
 let userIdCounter = 0;
 
-const sessions = new Map<string, SessionRecord>();
-const otps = new Map<string, OtpRecord>();
+const sessions = new Map<string, SessionRow>();
+const otps = new Map<string, OtpRow>();
 
 export const db = {
   users: {
@@ -38,11 +47,11 @@ export const db = {
   },
 
   sessions: {
-    store: async (record: SessionRecord) => {
-      sessions.set(record.sessionId, record);
+    insert: async (row: SessionRow) => {
+      sessions.set(row.id, row);
     },
 
-    get: async (sessionId: string) => sessions.get(sessionId) ?? null,
+    get: async (id: string) => sessions.get(id) ?? null,
 
     delete: async (sessionId: string) => {
       sessions.delete(sessionId);
@@ -58,14 +67,15 @@ export const db = {
   },
 
   otps: {
-    store: async (record: OtpRecord) => {
-      otps.set(record.identifier, record);
+    insert: async (row: OtpRow) => {
+      otps.set(row.id, row);
     },
 
-    take: async (identifier: string) => {
-      const record = otps.get(identifier) ?? null;
-      otps.delete(identifier);
-      return record;
+    /** Deletes the row and returns it, null when there is none */
+    delete: async (id: string) => {
+      const row = otps.get(id) ?? null;
+      otps.delete(id);
+      return row;
     },
   },
 };
