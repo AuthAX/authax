@@ -23,6 +23,7 @@ const otpsTable = createTable<{ email: string; otp: string }>();
  */
 class Proof<T> {
   readonly proven: T;
+  private used = false;
 
   private constructor(proven: T) {
     this.proven = proven;
@@ -31,6 +32,12 @@ class Proof<T> {
   static prove<T>(proven: T) {
     return new Proof(proven);
   }
+
+  /** A proof is spent by the one call that uses it. A second call throws. */
+  consume() {
+    if (this.used) throw new Error("proof already used");
+    this.used = true;
+  }
 }
 
 /**
@@ -38,10 +45,14 @@ class Proof<T> {
  */
 
 const opaque = {
-  make: async (proof: Proof<unknown>, { userId }: { userId: string }) => {
+  make: async <T>(
+    proof: Proof<T>,
+    resolve: (proven: T) => Promise<{ userId: string }>,
+  ) => {
     if (!(proof instanceof Proof)) throw new Error("not a proof");
+    proof.consume();
 
-    const sessionRow = await sessionsTable.insert({ userId });
+    const sessionRow = await sessionsTable.insert(await resolve(proof.proven));
 
     return sessionRow.id;
   },
@@ -93,11 +104,21 @@ const proof = await otp.verify({
 });
 if (proof === null) throw new Error("wrong otp");
 console.log("proof", proof);
-const sessionId = await opaque.make(proof, { userId: "some-user-identifier" });
+const sessionId = await opaque.make(proof, async ({ email }) => ({
+  userId: `user-for-${email}`,
+}));
+console.log("proof", proof);
 
 // 3. Get the session and the user - server function
 const session = await opaque.get(sessionId);
 console.log("SESSION", session);
+
+// 4. Reuse the proof - rejected at runtime
+try {
+  await opaque.make(proof, async () => ({ userId: "someone-else" }));
+} catch (error) {
+  console.log("REUSE", error instanceof Error ? error.message : error);
+}
 
 // The guard. Never called, it exists to show what does not compile.
 export function withoutProof(userId: string) {
