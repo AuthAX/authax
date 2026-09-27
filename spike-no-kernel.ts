@@ -1,17 +1,5 @@
 import { createTable } from "./spike-helpers";
 
-const _email = "ripley@example.com";
-let _interceptedOneTimePasscode = "";
-
-// The app's own table. Keyed by a random id, email is a column.
-// const usersTable = createTable<{ name: string }>();
-
-// Opaque session. Remembers the user id under a random id.
-const sessionsTable = createTable<{ userId: string }>();
-
-// OTP. One row per sent otp, keyed by a random id. Checked once.
-const otpsTable = createTable<{ email: string; otp: string }>();
-
 /**
  * Proof
  */
@@ -41,52 +29,96 @@ class Proof<T> {
 }
 
 /**
- * Session
+ * Session factory
  */
 
-const opaque = {
-  make: async <T>(
-    proof: Proof<T>,
-    resolve: (proven: T) => Promise<{ userId: string }>,
-  ) => {
-    if (!(proof instanceof Proof)) throw new Error("not a proof");
-    proof.consume();
+function makeOpaqueSession<Remembered extends object>(args: {
+  /** Stores a session row and returns its id */
+  store: (row: Remembered) => Promise<{ id: string }>;
+  /** Reads a session row by id, null when there is none */
+  get: (id: string) => Promise<(Remembered & { id: string }) | null>;
+}) {
+  return {
+    make: async <T>(
+      proof: Proof<T>,
+      resolve: (proven: T) => Promise<Remembered>,
+    ) => {
+      if (!(proof instanceof Proof)) throw new Error("not a proof");
+      proof.consume();
 
-    const sessionRow = await sessionsTable.insert(await resolve(proof.proven));
+      const { id } = await args.store(await resolve(proof.proven));
 
-    return sessionRow.id;
-  },
+      return id;
+    },
 
-  get: async (id: string) => {
-    return sessionsTable.get(id);
-  },
-};
+    get: (id: string) => args.get(id),
+  };
+}
 
 /**
- * OTP strategy
+ * OTP factory
  */
 
-const otp = {
-  send: async (email: string) => {
-    const otp = crypto.randomUUID();
-    const { id } = await otpsTable.insert({ email, otp });
+function makeOTP(args: {
+  /** Stores an otp row and returns its id */
+  store: (row: { identifier: string; otp: string }) => Promise<{ id: string }>;
+  /** Removes an otp row by id and returns it, atomically. Null when there is none. */
+  take: (id: string) => Promise<{ identifier: string; otp: string } | null>;
+  /** Delivers the otp to the identifier, an email address or a phone number */
+  send: (identifier: string, otp: string) => Promise<void>;
+}) {
+  return {
+    send: async (identifier: string) => {
+      const otp = crypto.randomUUID();
+      const { id } = await args.store({ identifier, otp });
 
-    // Capture the otp for demo
-    _interceptedOneTimePasscode = otp;
+      await args.send(identifier, otp);
 
-    // Simulate sending the otp to the email address
-    console.log("sent otp to:", email, "otp:", otp);
+      return id;
+    },
 
-    return id;
+    verify: async ({ id, otp }: { id: string; otp: string }) => {
+      const row = await args.take(id);
+
+      return row !== null && row.otp === otp
+        ? Proof.prove({ identifier: row.identifier })
+        : null;
+    },
+  };
+}
+
+/**
+ * App
+ */
+
+const sessionsTable = createTable<{ userId: string }>();
+const otpsTable = createTable<{ identifier: string; otp: string }>();
+
+// Captures what would have been delivered, for the demo
+const delivered = new Map<string, string>();
+
+const opaque = makeOpaqueSession<{ userId: string }>({
+  store: (row) => sessionsTable.insert(row),
+  get: (id) => sessionsTable.get(id),
+});
+
+const emailOtp = makeOTP({
+  store: (row) => otpsTable.insert(row),
+  take: (id) => otpsTable.delete(id),
+  send: async (identifier, otp) => {
+    console.log("email to:", identifier, "otp:", otp);
+    delivered.set(identifier, otp);
   },
-  verify: async ({ id, otp }: { id: string; otp: string }) => {
-    const row = await otpsTable.delete(id);
+});
 
-    const ok = row !== null && row.otp === otp;
-
-    return ok && row !== null ? Proof.prove({ email: row.email }) : null;
+const smsOtp = makeOTP({
+  store: (row) => otpsTable.insert(row),
+  take: (id) => otpsTable.delete(id),
+  send: async (identifier, otp) => {
+    console.log("sms to:", identifier, "otp:", otp);
+    delivered.set(identifier, otp);
   },
-};
+});
 
 //
 // Playground
@@ -94,28 +126,40 @@ const otp = {
 
 console.log("-".repeat(80));
 
-// 1. Request OTP - server function
-const otpId = await otp.send(_email);
+// Email. 1. request, 2. verify, 3. session
+const emailOtpId = await emailOtp.send("ripley@example.com");
 
-// 2. Verify OTP - server function
-const proof = await otp.verify({
-  id: otpId,
-  otp: _interceptedOneTimePasscode,
+const emailProof = await emailOtp.verify({
+  id: emailOtpId,
+  otp: delivered.get("ripley@example.com") ?? "",
 });
-if (proof === null) throw new Error("wrong otp");
-console.log("proof", proof);
-const sessionId = await opaque.make(proof, async ({ email }) => ({
-  userId: `user-for-${email}`,
+if (emailProof === null) throw new Error("wrong otp");
+
+const emailSessionId = await opaque.make(
+  emailProof,
+  async ({ identifier }) => ({
+    userId: `user-for-${identifier}`,
+  }),
+);
+console.log("SESSION", await opaque.get(emailSessionId));
+
+// SMS. Same three steps, other instance
+const smsOtpId = await smsOtp.send("+15555550100");
+
+const smsProof = await smsOtp.verify({
+  id: smsOtpId,
+  otp: delivered.get("+15555550100") ?? "",
+});
+if (smsProof === null) throw new Error("wrong otp");
+
+const smsSessionId = await opaque.make(smsProof, async ({ identifier }) => ({
+  userId: `user-for-${identifier}`,
 }));
-console.log("proof", proof);
+console.log("SESSION", await opaque.get(smsSessionId));
 
-// 3. Get the session and the user - server function
-const session = await opaque.get(sessionId);
-console.log("SESSION", session);
-
-// 4. Reuse the proof - rejected at runtime
+// Reuse the proof. Rejected at runtime
 try {
-  await opaque.make(proof, async () => ({ userId: "someone-else" }));
+  await opaque.make(emailProof, async () => ({ userId: "someone-else" }));
 } catch (error) {
   console.log("REUSE", error instanceof Error ? error.message : error);
 }
@@ -123,5 +167,5 @@ try {
 // The guard. Never called, it exists to show what does not compile.
 export function withoutProof(userId: string) {
   // @ts-expect-error a session cannot be made without a proof
-  return opaque.make({ userId }, { userId });
+  return opaque.make({ userId }, async () => ({ userId }));
 }
