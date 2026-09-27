@@ -39,16 +39,17 @@ function fail<Reason extends string>(reason: Reason): Failure<Reason> {
  * Session factory
  */
 
-function makeOpaqueSession<Remembered extends object>(args: {
+/** Session is what the app decides a session is, a user id and whatever else it wants to keep */
+function makeOpaqueSession<Session extends object>(args: {
   /** Stores a session row and returns its id */
-  store: (row: Remembered) => Promise<{ id: string }>;
+  store: (row: Session) => Promise<{ id: string }>;
   /** Reads a session row by id, null when there is none */
-  get: (id: string) => Promise<(Remembered & { id: string }) | null>;
+  get: (id: string) => Promise<(Session & { id: string }) | null>;
 }) {
   return {
     make: async <T>(
       proof: Proof<T>,
-      resolve: (proven: T) => Promise<Remembered>,
+      resolve: (proven: T) => Promise<Session>,
     ) => {
       if (!(proof instanceof Proof)) throw new Error("not a proof");
       proof.consume();
@@ -99,9 +100,9 @@ function makeOTP(args: {
  * Passkey factory
  *
  * Fake. No WebAuthn, the "signature" is the public key sent back as is.
- * Only the shape of the two ceremonies is real. The library stores
- * credentials but never who owns them, the app keeps that link, the same
- * way it maps an OTP identifier to a user.
+ * Only the shape of the two ceremonies is real. The library stores the
+ * credential with the handle the app gave it and hands the handle back on
+ * authentication. What the handle means is the app's business.
  */
 
 /** A registration challenge carries the handle until the ceremony finishes */
