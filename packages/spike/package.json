@@ -1,0 +1,8 @@
+{
+  "name": "@repo/spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc"
+  }
+}

@@ -1,5 +1,11 @@
 {
   "compilerOptions": {
+    /* Environment */
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM"],
+
     /* Base */
     "moduleDetection": "force",
     "verbatimModuleSyntax": true,
@@ -13,6 +19,5 @@
     "noImplicitReturns": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true
-  },
-  "include": ["spike.ts", "spike-no-kernel.ts", "spike-helpers.ts"]
+  }
 }
