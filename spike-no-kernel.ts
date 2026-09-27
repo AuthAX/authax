@@ -16,17 +16,21 @@ const otpsTable = createTable<{ email: string; otp: string }>();
  * Proof
  */
 
-const proof = Symbol("proof");
+/**
+ * What a strategy proved. Only a strategy can construct one, and a session
+ * cannot be made without one. In a package, only the type is exported, so
+ * the factory is reachable from strategies alone.
+ */
+class Proof<T> {
+  readonly proven: T;
 
-/** Only a strategy can produce one. A session cannot be made without one. */
-type Proof = { readonly [proof]: true };
+  private constructor(proven: T) {
+    this.proven = proven;
+  }
 
-/** What a strategy proved, marked as a proof */
-type Proven<T> = T & Proof;
-
-/** Strategies call this. In a package, the symbol is not exported, so nothing else can. */
-function prove<T extends object>(value: T): Proven<T> {
-  return { ...value, [proof]: true };
+  static prove<T>(proven: T) {
+    return new Proof(proven);
+  }
 }
 
 /**
@@ -34,7 +38,9 @@ function prove<T extends object>(value: T): Proven<T> {
  */
 
 const opaque = {
-  make: async (_: Proof, { userId }: { userId: string }) => {
+  make: async (proof: Proof<unknown>, { userId }: { userId: string }) => {
+    if (!(proof instanceof Proof)) throw new Error("not a proof");
+
     const sessionRow = await sessionsTable.insert({ userId });
 
     return sessionRow.id;
@@ -67,7 +73,7 @@ const otp = {
 
     const ok = row !== null && row.otp === otp;
 
-    return ok && row !== null ? prove({ email: row.email }) : null;
+    return ok && row !== null ? Proof.prove({ email: row.email }) : null;
   },
 };
 
@@ -81,13 +87,13 @@ console.log("-".repeat(80));
 const otpId = await otp.send(_email);
 
 // 2. Verify OTP - server function
-const proven = await otp.verify({
+const proof = await otp.verify({
   id: otpId,
   otp: _interceptedOneTimePasscode,
 });
-if (proven === null) throw new Error("wrong otp");
-console.log("proven", proven);
-const sessionId = await opaque.make(proven, { userId: "some-user-identifier" });
+if (proof === null) throw new Error("wrong otp");
+console.log("proof", proof);
+const sessionId = await opaque.make(proof, { userId: "some-user-identifier" });
 
 // 3. Get the session and the user - server function
 const session = await opaque.get(sessionId);
