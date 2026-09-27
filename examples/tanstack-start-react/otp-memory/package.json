@@ -10,7 +10,6 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "authax": "workspace:*",
     "@repo/shared-react": "workspace:*",
     "@repo/spike": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
