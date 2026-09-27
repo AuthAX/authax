@@ -15,10 +15,17 @@ export class Proof<T> {
     return new Proof(proven);
   }
 
-  /** A proof is spent by the one call that uses it. A second call throws. */
-  consume() {
-    if (this.used) throw new Error("proof already used");
-    this.used = true;
+  /**
+   * Spends a proof and returns what it proved. Every session implementation
+   * calls this first, so the rule lives here and not in each of them. A
+   * second call with the same proof throws.
+   */
+  static spend<T>(proof: Proof<T>): T {
+    if (!(proof instanceof Proof)) throw new Error("not a proof");
+    if (proof.used) throw new Error("proof already used");
+    proof.used = true;
+
+    return proof.proven;
   }
 }
 

@@ -3,6 +3,7 @@ import {
   makeOpaqueSession,
   makeOTP,
   makePasskey,
+  makeSignedSession,
   type Challenge,
   type Proof,
 } from "./src/index";
@@ -157,6 +158,26 @@ const added = await passkey.finishRegistration({
 if (!isProof(added)) throw new Error(added.reason);
 authenticator.set(secondCredentialId, { key: secondKey, handle: add.user.id });
 console.log("ADDED", added.proven);
+
+// Signed session. Same three steps, no table. The token carries the session
+const signed = makeSignedSession<{ userId: string }>({
+  secret: "spike-secret",
+  ttl: 60 * 60 * 1000,
+});
+
+const signedOtpId = await emailOtp.send("ripley@example.com");
+const signedProof = await emailOtp.verify({
+  id: signedOtpId,
+  otp: delivered.get("ripley@example.com") ?? "",
+});
+if (!isProof(signedProof)) throw new Error(signedProof.reason);
+
+const token = await signed.make(signedProof, async ({ identifier }) => ({
+  userId: `user-for-${identifier}`,
+}));
+console.log("TOKEN", token);
+console.log("SIGNED SESSION", await signed.get(token));
+console.log("TAMPERED", await signed.get(`${token.slice(0, -2)}xx`));
 
 // Failures come back with a reason
 const wrongOtpId = await emailOtp.send("ripley@example.com");
