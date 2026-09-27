@@ -28,6 +28,13 @@ class Proof<T> {
   }
 }
 
+/** An expected failure the app branches on. The reason names what did not hold. */
+type Failure<Reason extends string> = { reason: Reason };
+
+function fail<Reason extends string>(reason: Reason): Failure<Reason> {
+  return { reason };
+}
+
 /**
  * Session factory
  */
@@ -80,9 +87,10 @@ function makeOTP(args: {
     verify: async ({ id, otp }: { id: string; otp: string }) => {
       const row = await args.take(id);
 
-      return row !== null && row.otp === otp
-        ? Proof.prove({ identifier: row.identifier })
-        : null;
+      if (row === null) return fail("unknown");
+      if (row.otp !== otp) return fail("mismatch");
+
+      return Proof.prove({ identifier: row.identifier });
     },
   };
 }
@@ -122,7 +130,9 @@ function makePasskey(args: {
       publicKey: string;
     }) => {
       const row = await args.takeChallenge(challenge);
-      if (row === null || row.purpose !== "register") return null;
+
+      if (row === null) return fail("challenge");
+      if (row.purpose !== "register") return fail("challenge");
 
       const { id } = await args.storeCredential({ publicKey });
 
@@ -144,11 +154,14 @@ function makePasskey(args: {
       signature: string;
     }) => {
       const row = await args.takeChallenge(challenge);
-      if (row === null || row.purpose !== "authenticate") return null;
+
+      if (row === null) return fail("challenge");
+      if (row.purpose !== "authenticate") return fail("challenge");
 
       const credential = await args.getCredential(credentialId);
-      if (credential === null || credential.publicKey !== signature)
-        return null;
+
+      if (credential === null) return fail("credential");
+      if (credential.publicKey !== signature) return fail("signature");
 
       return Proof.prove({ credentialId });
     },
@@ -216,7 +229,7 @@ const emailProof = await emailOtp.verify({
   id: emailOtpId,
   otp: delivered.get("ripley@example.com") ?? "",
 });
-if (emailProof === null) throw new Error("wrong otp");
+if (!(emailProof instanceof Proof)) throw new Error(emailProof.reason);
 
 const emailSessionId = await opaque.make(
   emailProof,
@@ -233,7 +246,7 @@ const smsProof = await smsOtp.verify({
   id: smsOtpId,
   otp: delivered.get("+15555550100") ?? "",
 });
-if (smsProof === null) throw new Error("wrong otp");
+if (!(smsProof instanceof Proof)) throw new Error(smsProof.reason);
 
 const smsSessionId = await opaque.make(smsProof, async ({ identifier }) => ({
   userId: `user-for-${identifier}`,
@@ -248,7 +261,7 @@ const registered = await passkey.finishRegistration({
   challenge: signUp.challenge,
   publicKey: newKey,
 });
-if (registered === null) throw new Error("registration failed");
+if (!(registered instanceof Proof)) throw new Error(registered.reason);
 authenticator.set(registered.proven.credentialId, newKey);
 
 credentialOwners.set(registered.proven.credentialId, "user-ripley");
@@ -268,7 +281,7 @@ const authenticated = await passkey.finishAuthentication({
   credentialId,
   signature: key,
 });
-if (authenticated === null) throw new Error("authentication failed");
+if (!(authenticated instanceof Proof)) throw new Error(authenticated.reason);
 
 const signInSessionId = await opaque.make(
   authenticated,
@@ -289,10 +302,23 @@ const added = await passkey.finishRegistration({
   challenge: add.challenge,
   publicKey: secondKey,
 });
-if (added === null) throw new Error("registration failed");
+if (!(added instanceof Proof)) throw new Error(added.reason);
 authenticator.set(added.proven.credentialId, secondKey);
 credentialOwners.set(added.proven.credentialId, current.userId);
 console.log("OWNERS", credentialOwners);
+
+// Failures come back with a reason
+const wrongOtpId = await emailOtp.send("ripley@example.com");
+console.log("WRONG", await emailOtp.verify({ id: wrongOtpId, otp: "nope" }));
+console.log("USED", await emailOtp.verify({ id: wrongOtpId, otp: "nope" }));
+console.log(
+  "STRANGER",
+  await passkey.finishAuthentication({
+    challenge: (await passkey.beginAuthentication()).challenge,
+    credentialId: "not-a-credential",
+    signature: "",
+  }),
+);
 
 // Reuse the proof. Rejected at runtime
 try {
