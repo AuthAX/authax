@@ -4,6 +4,7 @@
  */
 type Reason =
   | "unknown_ticket"
+  | "expired_otp"
   | "wrong_otp"
   | "unknown_challenge"
   | "unknown_credential"

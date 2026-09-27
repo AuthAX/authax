@@ -9,7 +9,7 @@ import { issueProof, type Proof } from "../proof";
  */
 
 /** A registration challenge carries the handle until the ceremony finishes */
-export type Challenge =
+type Challenge =
   { purpose: "register"; handle: string } | { purpose: "authenticate" };
 
 export function makePasskey(args: {

@@ -3,7 +3,6 @@ import {
   makeOTP,
   makePasskey,
   makeSignedSessionManager,
-  type Challenge,
 } from "./src/index";
 import { makeTable } from "./spike-helpers";
 
@@ -12,8 +11,15 @@ import { makeTable } from "./spike-helpers";
  */
 
 const sessionsTable = makeTable<{ userId: string }>();
-const otpsTable = makeTable<{ identifier: string; otp: string }>();
-const challengesTable = makeTable<Challenge>();
+const otpsTable = makeTable<{
+  identifier: string;
+  otp: string;
+  expiresAt: number;
+  attemptsLeft: number;
+}>();
+const challengesTable = makeTable<
+  { purpose: "register"; handle: string } | { purpose: "authenticate" }
+>();
 const credentialsTable = makeTable<{ publicKey: string; handle: string }>();
 
 // The fake authenticator in the browser. Credential id to its key and handle.
@@ -38,6 +44,8 @@ const emailOtp = makeOTP({
     console.log("email to:", identifier, "otp:", otp);
     delivered.set(identifier, otp);
   },
+  ttl: 10 * 60 * 1000,
+  attempts: 3,
 });
 
 const smsOtp = makeOTP({
@@ -49,6 +57,8 @@ const smsOtp = makeOTP({
     console.log("sms to:", identifier, "otp:", otp);
     delivered.set(identifier, otp);
   },
+  ttl: 10 * 60 * 1000,
+  attempts: 3,
 });
 
 const passkey = makePasskey({
@@ -197,7 +207,7 @@ console.log(
 );
 console.log(
   "USED",
-  await emailOtp.verify({ ticket: wrongTicket, otp: "nope" }),
+  await emailOtp.verify({ ticket: emailTicket, otp: "nope" }),
 );
 console.log(
   "STRANGER",
