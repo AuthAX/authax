@@ -7,9 +7,9 @@ type Reason =
   | "expired_otp"
   | "wrong_otp"
   | "unknown_challenge"
+  | "expired_challenge"
   | "unknown_credential"
-  | "wrong_signature"
-  | "wrong_handle";
+  | "invalid_credential";
 
 /** What a strategy returns. Narrow on success, then read data or error. */
 export type Result<T, E extends Reason> = Success<T> | Failure<E>;

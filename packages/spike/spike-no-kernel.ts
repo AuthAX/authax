@@ -5,6 +5,7 @@ import {
   makeSignedSessionManager,
 } from "./src/index";
 import { makeMemoryTable } from "./src/demo/index";
+import { makeAuthenticator } from "./spike-authenticator";
 
 /**
  * App
@@ -22,19 +23,20 @@ const otpsTable = makeMemoryTable<{
   expiresAt: number;
   attemptsLeft: number;
 }>("ticket");
-const challengesTable = makeMemoryTable<
-  { challenge: string } & (
-    { purpose: "register"; handle: string } | { purpose: "authenticate" }
-  )
->("challenge");
+const challengesTable = makeMemoryTable<{
+  challenge: string;
+  handle: string | null;
+  expiresAt: number;
+}>("challenge");
 const credentialsTable = makeMemoryTable<{
   credentialId: string;
-  publicKey: string;
   handle: string;
+  publicKey: string;
+  counter: number;
 }>("credentialId");
 
-// The fake authenticator in the browser. Credential id to its key and handle.
-const authenticator = new Map<string, { key: string; handle: string }>();
+// Stands in for the browser and the device
+const authenticator = makeAuthenticator("http://localhost:3000");
 
 // Captures what would have been delivered, for the demo
 const delivered = new Map<string, string>();
@@ -79,6 +81,8 @@ const smsOtp = makeOTP({
 const passkey = makePasskey({
   rpId: "localhost",
   rpName: "Spike",
+  origins: ["http://localhost:3000"],
+  ttl: 5 * 60 * 1000,
   storeChallenge: async (challenge, row) => {
     await challengesTable.insert({ challenge, ...row });
   },
@@ -87,6 +91,9 @@ const passkey = makePasskey({
     await credentialsTable.insert({ credentialId, ...row });
   },
   getCredential: (credentialId) => credentialsTable.get(credentialId),
+  setCounter: async (credentialId, counter) => {
+    await credentialsTable.update(credentialId, { counter });
+  },
 });
 
 //
@@ -131,15 +138,10 @@ const signUp = await passkey.beginRegistration({
   name: "ripley@example.com",
 });
 console.log("OPTIONS", signUp);
-const newCredentialId = crypto.randomUUID();
-const newKey = crypto.randomUUID();
-const registered = await passkey.finishRegistration({
-  challenge: signUp.challenge,
-  credentialId: newCredentialId,
-  publicKey: newKey,
-});
+const registered = await passkey.finishRegistration(
+  await authenticator.create(signUp),
+);
 if (!registered.success) throw new Error(registered.error);
-authenticator.set(newCredentialId, { key: newKey, handle: signUp.user.id });
 
 const signUpSessionId = await opaque.make(registered.data, {
   userId: registered.data.proven.userHandle,
@@ -148,16 +150,9 @@ console.log("SESSION", await opaque.get(signUpSessionId));
 
 // Passkey sign-in. 1. begin, 2. browser signs, 3. finish, 4. session
 const signIn = await passkey.beginAuthentication();
-const [credentialId, stored] = authenticator.entries().next().value ?? [
-  "",
-  { key: "", handle: "" },
-];
-const authenticated = await passkey.finishAuthentication({
-  challenge: signIn.challenge,
-  credentialId,
-  signature: stored.key,
-  userHandle: stored.handle,
-});
+const authenticated = await passkey.finishAuthentication(
+  await authenticator.get(signIn),
+);
 if (!authenticated.success) throw new Error(authenticated.error);
 
 const signInSessionId = await opaque.make(authenticated.data, {
@@ -174,15 +169,8 @@ const add = await passkey.beginRegistration({
   handle: current.userId,
   name: "ripley@example.com",
 });
-const secondCredentialId = crypto.randomUUID();
-const secondKey = crypto.randomUUID();
-const added = await passkey.finishRegistration({
-  challenge: add.challenge,
-  credentialId: secondCredentialId,
-  publicKey: secondKey,
-});
+const added = await passkey.finishRegistration(await authenticator.create(add));
 if (!added.success) throw new Error(added.error);
-authenticator.set(secondCredentialId, { key: secondKey, handle: add.user.id });
 console.log("ADDED", added.data.proven);
 
 // Signed session manager. Same three steps, no table. The token carries the
@@ -216,14 +204,28 @@ console.log(
   "USED",
   await emailOtp.verify({ ticket: emailTicket, otp: "nope" }),
 );
+
+// A device with a passkey the app never stored
+const stranger = makeAuthenticator("http://localhost:3000");
+await stranger.create(
+  await passkey.beginRegistration({ handle: "nobody", name: "nobody" }),
+);
 console.log(
   "STRANGER",
-  await passkey.finishAuthentication({
-    challenge: (await passkey.beginAuthentication()).challenge,
-    credentialId: "not-a-credential",
-    signature: "",
-    userHandle: "",
-  }),
+  await passkey.finishAuthentication(
+    await stranger.get(await passkey.beginAuthentication()),
+  ),
+);
+
+// The right passkey, presented from another site
+const elsewhere = makeAuthenticator("http://evil.example");
+console.log(
+  "ELSEWHERE",
+  await passkey.finishRegistration(
+    await elsewhere.create(
+      await passkey.beginRegistration({ handle: ripley, name: "ripley" }),
+    ),
+  ),
 );
 
 // Reuse the proof. Rejected at runtime
