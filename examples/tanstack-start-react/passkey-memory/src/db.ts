@@ -4,74 +4,44 @@
  * Simple in-memory stores for demonstration purposes. In a real app these
  * would be replaced with database queries.
  */
-import type { ChallengeRecord, CredentialRecord, SessionRecord } from "authax";
+import { makeMemoryTable } from "@repo/spike/demo";
 
-const users = new Map<string, { userId: string }>();
-let userIdCounter = 0;
+const users = makeMemoryTable<{ userId: string }>("userId");
 
-const sessions = new Map<string, SessionRecord>();
-const credentials = new Map<string, CredentialRecord>();
-const challenges = new Map<string, ChallengeRecord>();
+const sessions = makeMemoryTable<{
+  id: string;
+  userId: string;
+  expiresAt: Date;
+}>("id");
+
+const credentials = makeMemoryTable<{
+  id: string;
+  userId: string;
+  publicKey: string;
+  counter: number;
+}>("id");
+
+const challenges = makeMemoryTable<{
+  id: string;
+  /** Who a registration is for. Null when the challenge is for signing in. */
+  userId: string | null;
+  expiresAt: Date;
+}>("id");
 
 export const db = {
-  users: {
-    create: () => {
-      const userId = `user_${++userIdCounter}`;
-      users.set(userId, { userId });
-      return { userId };
-    },
-    get: (userId: string) => users.get(userId),
-  },
+  users,
 
   sessions: {
-    store: async (record: SessionRecord) => {
-      sessions.set(record.sessionId, record);
-    },
+    ...sessions,
 
-    get: async (sessionId: string) => sessions.get(sessionId) ?? null,
-
-    delete: async (sessionId: string) => {
-      sessions.delete(sessionId);
-    },
-
-    deleteAllForUser: (userId: string) => {
-      for (const [sessionId, record] of sessions) {
-        if (record.userId === userId) {
-          sessions.delete(sessionId);
-        }
+    deleteAllForUser: async (userId: string) => {
+      for (const session of await sessions.where({ userId })) {
+        await sessions.delete(session.id);
       }
     },
   },
 
-  credentials: {
-    store: async (record: CredentialRecord) => {
-      credentials.set(record.credentialId, record);
-    },
+  credentials,
 
-    get: async (credentialId: string) => credentials.get(credentialId) ?? null,
-
-    list: async (userId: string) =>
-      Array.from(credentials.values()).filter((c) => c.userId === userId),
-
-    setCounter: async (credentialId: string, counter: number) => {
-      const record = credentials.get(credentialId);
-      if (record) credentials.set(credentialId, { ...record, counter });
-    },
-
-    delete: (credentialId: string) => {
-      credentials.delete(credentialId);
-    },
-  },
-
-  challenges: {
-    store: async (record: ChallengeRecord) => {
-      challenges.set(record.challenge, record);
-    },
-
-    take: async (challenge: string) => {
-      const record = challenges.get(challenge) ?? null;
-      challenges.delete(challenge);
-      return record;
-    },
-  },
+  challenges,
 };
