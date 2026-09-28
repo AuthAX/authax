@@ -60,6 +60,14 @@ export function makePasskey(args: {
 }) {
   const policy = { rpId: args.rpId, allowedOrigins: args.origins };
 
+  // Spike only. Says in the server log why the verification refused a
+  // passkey, until the reasons are designed.
+  const refused = (error: unknown) => {
+    console.error("[passkey] refused:", error);
+
+    return null;
+  };
+
   const makeChallenge = async (handle: string | null) => {
     const challenge = randomBase64url(32);
 
@@ -118,7 +126,7 @@ export function makePasskey(args: {
         credential,
         clientData.challenge,
         policy,
-      ).catch(() => null);
+      ).catch(refused);
 
       if (verified === null) return fail("invalid_credential");
 
@@ -178,7 +186,7 @@ export function makePasskey(args: {
         { publicKey, counter: stored.counter },
         clientData.challenge,
         policy,
-      ).catch(() => null);
+      ).catch(refused);
 
       if (verified === null) return fail("invalid_credential");
 

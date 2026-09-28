@@ -56,7 +56,11 @@ export const verifyRegistration = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const result = await passkey.finishRegistration(data.credential);
 
-    if (!result.success) return { success: false as const };
+    if (!result.success) {
+      console.log("[passkey] refused:", result.error);
+
+      return { success: false as const };
+    }
 
     const userId = result.data.proven.userHandle;
     const { isNew } = await db.users.findOrInsert({ userId }, { userId });
@@ -104,7 +108,11 @@ export const verifyAddPasskey = createServerFn({ method: "POST" })
 
     const result = await passkey.finishRegistration(data.credential);
 
-    if (!result.success) return { success: false as const };
+    if (!result.success) {
+      console.log("[passkey] refused:", result.error);
+
+      return { success: false as const };
+    }
 
     // The ceremony has to be one this user started. The passkey is already
     // stored when the answer comes back, so it is removed again.
@@ -140,7 +148,11 @@ export const verifyAuthentication = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const result = await passkey.finishAuthentication(data.credential);
 
-    if (!result.success) return { success: false as const };
+    if (!result.success) {
+      console.log("[passkey] refused:", result.error);
+
+      return { success: false as const };
+    }
 
     sessionCookie.set(
       await sessionManager.make(result.data, {
