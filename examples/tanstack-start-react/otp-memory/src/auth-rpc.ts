@@ -41,7 +41,7 @@ export const requestOtp = createServerFn({ method: "POST" })
 /**
  * Verify OTP server function
  *
- * Authenticates with the OTP, which upserts the user and establishes a
+ * Authenticates with the OTP, finds or creates the user, and establishes a
  * session. Returns isNew to distinguish sign-up from sign-in (for analytics,
  * onboarding, etc.).
  */
@@ -52,13 +52,17 @@ export const verifyOtp = createServerFn({ method: "POST" })
 
     if (!result.success) return { success: false };
 
-    const user = db.users.upsert(result.data.proven.identifier);
+    const { identifier } = result.data.proven;
+    const { row: user, isNew } = await db.users.findOrInsert(
+      { email: identifier },
+      { userId: crypto.randomUUID(), email: identifier },
+    );
 
     sessionCookie.set(
       await sessionManager.make(result.data, { userId: user.userId }),
     );
 
-    return { success: true, isNew: user.isNew };
+    return { success: true, isNew };
   });
 
 /**
@@ -76,7 +80,7 @@ export const changeEmail = createServerFn({ method: "POST" })
     const verified = await emailOtp.verify(data);
     if (!verified.success) return { success: false };
 
-    const user = db.users.updateEmail(
+    const user = await db.users.updateEmail(
       identity.userId,
       verified.data.proven.identifier,
     );
@@ -105,7 +109,7 @@ export const signOut = createServerFn({ method: "POST" }).handler(async () => {
 export const signOutAll = createServerFn({ method: "POST" }).handler(
   async () => {
     const identity = await getIdentity();
-    if (identity) db.sessions.deleteAllForUser(identity.userId);
+    if (identity) await db.sessions.deleteAllForUser(identity.userId);
     sessionCookie.clear();
   },
 );
@@ -118,5 +122,5 @@ export const signOutAll = createServerFn({ method: "POST" }).handler(
 export const getViewer = createServerFn().handler(async () => {
   const identity = await getIdentity();
 
-  return identity ? (db.users.get(identity.userId) ?? null) : null;
+  return identity ? db.users.get(identity.userId) : null;
 });

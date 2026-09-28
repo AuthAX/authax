@@ -4,78 +4,41 @@
  * Simple in-memory stores for demonstration purposes. In a real app these
  * would be replaced with database queries.
  */
+import { makeMemoryTable } from "@repo/spike/demo";
 
-type SessionRow = { id: string; userId: string; expiresAt: Date };
+const users = makeMemoryTable<{ userId: string; email: string }>("userId");
 
-type OtpRow = {
+const sessions = makeMemoryTable<{
+  id: string;
+  userId: string;
+  expiresAt: Date;
+}>("id");
+
+const otps = makeMemoryTable<{
   id: string;
   email: string;
   otp: string;
   expiresAt: Date;
   attemptsLeft: number;
-};
-
-const users = new Map<string, { userId: string; email: string }>();
-let userIdCounter = 0;
-
-const sessions = new Map<string, SessionRow>();
-const otps = new Map<string, OtpRow>();
+}>("id");
 
 export const db = {
   users: {
-    upsert: (email: string) => {
-      const exists = Array.from(users.values()).find((u) => u.email === email);
+    ...users,
 
-      if (exists) {
-        return { userId: exists.userId, isNew: false };
-      }
-
-      const userId = `user_${++userIdCounter}`;
-      users.set(userId, { userId, email });
-
-      return { userId, isNew: true };
-    },
-
-    get: (userId: string) => users.get(userId),
-
-    updateEmail: (userId: string, email: string) => {
-      const user = users.get(userId);
-      if (!user) return undefined;
-      user.email = email;
-      return user;
-    },
+    updateEmail: (userId: string, email: string) =>
+      users.update(userId, { email }),
   },
 
   sessions: {
-    insert: async (row: SessionRow) => {
-      sessions.set(row.id, row);
-    },
+    ...sessions,
 
-    get: async (id: string) => sessions.get(id) ?? null,
-
-    delete: async (sessionId: string) => {
-      sessions.delete(sessionId);
-    },
-
-    deleteAllForUser: (userId: string) => {
-      for (const [sessionId, record] of sessions) {
-        if (record.userId === userId) {
-          sessions.delete(sessionId);
-        }
+    deleteAllForUser: async (userId: string) => {
+      for (const session of await sessions.where({ userId })) {
+        await sessions.delete(session.id);
       }
     },
   },
 
-  otps: {
-    insert: async (row: OtpRow) => {
-      otps.set(row.id, row);
-    },
-
-    /** Deletes the row and returns it, null when there is none */
-    delete: async (id: string) => {
-      const row = otps.get(id) ?? null;
-      otps.delete(id);
-      return row;
-    },
-  },
+  otps,
 };
