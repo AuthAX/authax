@@ -13,21 +13,47 @@ export function makeMemoryTable<Row extends object>(
 ) {
   const rows = new Map<string, Row>();
 
+  const insert = (row: Row) => {
+    const id = String(row[key]);
+
+    if (rows.has(id)) throw new Error("a row with this key already exists");
+
+    rows.set(id, { ...row });
+  };
+
+  const where = (match: Partial<Row>) =>
+    [...rows.values()]
+      .filter((row) =>
+        Object.entries(match).every(
+          ([field, value]) => row[field as keyof Row] === value,
+        ),
+      )
+      .map((row) => ({ ...row }));
+
   return {
     /** Stores a new row under its key. Throws when the key is taken. */
-    insert: async (row: Row) => {
-      const id = String(row[key]);
-
-      if (rows.has(id)) throw new Error("a row with this key already exists");
-
-      rows.set(id, { ...row });
-    },
+    insert: async (row: Row) => insert(row),
 
     /** The row for a key, null when there is none */
     get: async (id: string) => {
       const row = rows.get(id);
 
       return row === undefined ? null : { ...row };
+    },
+
+    /**
+     * Changes fields of the row for a key and returns the row, null when
+     * there is none. The key itself cannot change.
+     */
+    update: async (id: string, fields: Partial<Row>) => {
+      const row = rows.get(id);
+
+      if (row === undefined) return null;
+      if (key in fields) throw new Error("the key of a row cannot change");
+
+      rows.set(id, { ...row, ...fields });
+
+      return { ...row, ...fields };
     },
 
     /** Removes the row for a key and returns it, null when there is none */
@@ -39,13 +65,20 @@ export function makeMemoryTable<Row extends object>(
     },
 
     /** Every row whose fields equal the ones given */
-    where: async (match: Partial<Row>) =>
-      [...rows.values()]
-        .filter((row) =>
-          Object.entries(match).every(
-            ([field, value]) => row[field as keyof Row] === value,
-          ),
-        )
-        .map((row) => ({ ...row })),
+    where: async (match: Partial<Row>) => where(match),
+
+    /**
+     * The first row whose fields equal the ones in match. When there is none,
+     * row is inserted and returned. isNew tells which of the two happened.
+     */
+    findOrInsert: async (match: Partial<Row>, row: Row) => {
+      const [found] = where(match);
+
+      if (found !== undefined) return { row: found, isNew: false };
+
+      insert(row);
+
+      return { row: { ...row }, isNew: true };
+    },
   };
 }
