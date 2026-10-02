@@ -82,7 +82,7 @@ export function usePasskeyAuthentication(
       const start = await options.start();
 
       if (!start.success) {
-        setError("Failed to start sign-in");
+        setError("Failed to start authentication");
         setLoading(false);
         return;
       }
@@ -90,7 +90,7 @@ export function usePasskeyAuthentication(
       const credential = await getPasskey(start.options);
 
       if (!credential) {
-        setError("Passkey sign-in was cancelled");
+        setError("Passkey authentication was cancelled");
         setLoading(false);
         return;
       }
@@ -100,11 +100,11 @@ export function usePasskeyAuthentication(
       if (result.success) {
         options.onSuccess();
       } else {
-        setError("Failed to sign in");
+        setError("Failed to authenticate with passkey");
       }
     } catch (cause) {
-      console.error("Passkey sign-in failed:", cause);
-      setError("Passkey sign-in failed");
+      console.error("Passkey authentication failed:", cause);
+      setError("Passkey authentication failed");
     }
 
     setLoading(false);
