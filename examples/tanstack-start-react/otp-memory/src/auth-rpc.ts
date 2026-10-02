@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { analytics } from "@repo/spike/demo";
 import { z } from "zod";
 import { db } from "./db";
 import {
@@ -64,6 +65,7 @@ export const verifyOtp = createServerFn({ method: "POST" })
     );
 
     sessionCookie.set(await sessionManager.make({ userId: user.userId }));
+    analytics.track(isNew ? "sign_up" : "sign_in", user.userId);
 
     return { success: true, isNew };
   });

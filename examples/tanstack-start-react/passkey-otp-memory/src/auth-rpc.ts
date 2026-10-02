@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { analytics } from "@repo/spike/demo";
 import { z } from "zod";
 import { db } from "./db";
 import { addEmailOtp, passkey, sessionManager } from "./auth";
@@ -84,6 +85,7 @@ export const verifyRegistration = createServerFn({ method: "POST" })
     if (!isNew) return { success: false as const };
 
     sessionCookie.set(await sessionManager.make({ userId }));
+    analytics.track("sign_up", userId);
 
     return { success: true as const };
   });
@@ -174,6 +176,7 @@ export const verifyAuthentication = createServerFn({ method: "POST" })
     sessionCookie.set(
       await sessionManager.make({ userId: result.data.userHandle }),
     );
+    analytics.track("sign_in", result.data.userHandle);
 
     return { success: true as const };
   });
