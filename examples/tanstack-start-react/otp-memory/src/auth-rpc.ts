@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { db } from "./db";
-import { emailOtp, sessionManager } from "./auth";
+import { confirmOtp, sessionManager, signInOtp } from "./auth";
 import { sessionCookie } from "./session-cookie";
 
 /** The session behind the request's cookie, null when there is none */
@@ -31,11 +31,11 @@ export const verifyOtpSchema = z.object({
  *
  * Returns the ticket the client sends back with the OTP.
  */
-export const requestOtp = createServerFn({ method: "POST" })
+export const signInOtpSF = createServerFn({ method: "POST" })
   .validator(requestOtpSchema)
   .handler(async ({ data }) => ({
     success: true,
-    ticket: await emailOtp.send(data.identifier),
+    ticket: await signInOtp.send(data.identifier),
   }));
 
 /**
@@ -48,7 +48,7 @@ export const requestOtp = createServerFn({ method: "POST" })
 export const verifyOtp = createServerFn({ method: "POST" })
   .validator(verifyOtpSchema)
   .handler(async ({ data }) => {
-    const result = await emailOtp.verify(data);
+    const result = await signInOtp.verify(data);
 
     if (!result.success) return { success: false };
 
@@ -66,6 +66,24 @@ export const verifyOtp = createServerFn({ method: "POST" })
   });
 
 /**
+ * Send OTP to a new email server function
+ *
+ * Requires an active session. Returns the ticket the client sends back with
+ * the OTP.
+ */
+export const requestChangeEmail = createServerFn({ method: "POST" })
+  .validator(requestOtpSchema)
+  .handler(async ({ data }) => {
+    const identity = await getIdentity();
+    if (!identity) return { success: false as const };
+
+    return {
+      success: true as const,
+      ticket: await confirmOtp.send(data.identifier),
+    };
+  });
+
+/**
  * Change email
  *
  * Verifies OTP for the new email, then swaps it on the authenticated user.
@@ -77,7 +95,7 @@ export const changeEmail = createServerFn({ method: "POST" })
     const identity = await getIdentity();
     if (!identity) return { success: false };
 
-    const verified = await emailOtp.verify(data);
+    const verified = await confirmOtp.verify(data);
     if (!verified.success) return { success: false };
 
     const user = await db.users.updateEmail(

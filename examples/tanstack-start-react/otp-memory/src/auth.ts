@@ -25,8 +25,17 @@ export const sessionManager = makeOpaqueSessionManager<{ userId: string }>({
   ttl: sessionTtl,
 });
 
-export const emailOtp = makeOTP({
-  store: async (ticket, row) => {
+/** Where tickets live. Both OTP instances below share it. */
+const otpTable = {
+  store: async (
+    ticket: string,
+    row: {
+      identifier: string;
+      otp: string;
+      expiresAt: number;
+      attemptsLeft: number;
+    },
+  ) => {
     await db.otps.insert({
       id: ticket,
       email: row.identifier,
@@ -35,20 +44,35 @@ export const emailOtp = makeOTP({
       attemptsLeft: row.attemptsLeft,
     });
   },
-  take: async (ticket) => {
+  take: async (ticket: string) => {
     const row = await db.otps.delete(ticket);
 
-    return row
-      ? {
-          identifier: row.email,
-          otp: row.otp,
-          expiresAt: row.expiresAt.getTime(),
-          attemptsLeft: row.attemptsLeft,
-        }
-      : null;
+    if (!row) return null;
+
+    return {
+      identifier: row.email,
+      otp: row.otp,
+      expiresAt: row.expiresAt.getTime(),
+      attemptsLeft: row.attemptsLeft,
+    };
   },
+};
+
+/** Signs someone in or up */
+export const signInOtp = makeOTP({
+  ...otpTable,
   send: async (identifier, otp) => {
-    console.log(`[OTP] ${identifier}: ${otp}`);
+    console.log(`[OTP] Sign in, ${identifier}: ${otp}`);
+  },
+  ttl: 10 * 60 * 1000,
+  attempts: 3,
+});
+
+/** Confirms a new email address for someone who is signed in */
+export const confirmOtp = makeOTP({
+  ...otpTable,
+  send: async (identifier, otp) => {
+    console.log(`[OTP] Confirm new email, ${identifier}: ${otp}`);
   },
   ttl: 10 * 60 * 1000,
   attempts: 3,

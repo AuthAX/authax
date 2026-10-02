@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import {
-  requestOtp,
+  signInOtpSF,
   verifyOtp,
+  requestChangeEmail,
   changeEmail,
   signOut,
   signOutAll,
@@ -40,7 +41,7 @@ function AuthFlow(props: { onSignedIn: () => void }) {
         as="form"
         onSubmit={async (e) => {
           e.preventDefault();
-          const result = await requestOtp({ data: { identifier: email } });
+          const result = await signInOtpSF({ data: { identifier: email } });
           if (result.success) {
             setTicket(result.ticket);
             setStep("otp");
@@ -92,7 +93,7 @@ function AuthFlow(props: { onSignedIn: () => void }) {
         variant="secondary"
         type="button"
         onClick={async () => {
-          const result = await requestOtp({ data: { identifier: email } });
+          const result = await signInOtpSF({ data: { identifier: email } });
           setTicket(result.ticket);
           setOtp("");
           setError(null);
@@ -117,7 +118,10 @@ function ChangeEmailFlow(props: { onDone: () => void; onCancel: () => void }) {
         as="form"
         onSubmit={async (e) => {
           e.preventDefault();
-          const result = await requestOtp({ data: { identifier: email } });
+          const result = await requestChangeEmail({
+            data: { identifier: email },
+          });
+
           if (result.success) {
             setTicket(result.ticket);
             setStep("otp");
@@ -175,10 +179,17 @@ function ChangeEmailFlow(props: { onDone: () => void; onCancel: () => void }) {
         variant="secondary"
         type="button"
         onClick={async () => {
-          const result = await requestOtp({ data: { identifier: email } });
-          setTicket(result.ticket);
-          setOtp("");
-          setError(null);
+          const result = await requestChangeEmail({
+            data: { identifier: email },
+          });
+
+          if (result.success) {
+            setTicket(result.ticket);
+            setOtp("");
+            setError(null);
+          } else {
+            setError("Failed to send one-time password");
+          }
         }}
       >
         Send a new one-time password
