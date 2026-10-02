@@ -250,10 +250,10 @@ export const addEmail = createServerFn({ method: "POST" })
     const verified = await addEmailOtp.verify(data);
     if (!verified.success) return { success: false };
 
-    const user = await db.users.setEmail(
-      identity.userId,
-      verified.data.identifier,
-    );
+    const user = await db.users.update(identity.userId, {
+      email: verified.data.identifier,
+    });
+
     if (!user) return { success: false };
 
     return { success: true, viewer: user };
@@ -279,7 +279,7 @@ export const signOut = createServerFn({ method: "POST" }).handler(async () => {
 export const signOutAll = createServerFn({ method: "POST" }).handler(
   async () => {
     const identity = await getIdentity();
-    if (identity) await db.sessions.deleteAllForUser(identity.userId);
+    if (identity) await db.sessions.deleteWhere({ userId: identity.userId });
     sessionCookie.clear();
   },
 );

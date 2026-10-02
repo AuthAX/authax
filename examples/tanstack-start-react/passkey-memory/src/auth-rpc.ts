@@ -244,10 +244,8 @@ export const deleteAccountSF = createServerFn({ method: "POST" })
       return { success: false as const };
     }
 
-    const passkeys = await db.credentials.where({ userId: identity.userId });
-
-    for (const { id } of passkeys) await db.credentials.delete(id);
-    await db.sessions.deleteAllForUser(identity.userId);
+    await db.credentials.deleteWhere({ userId: identity.userId });
+    await db.sessions.deleteWhere({ userId: identity.userId });
     await db.users.delete(identity.userId);
     sessionCookie.clear();
 
@@ -274,7 +272,7 @@ export const signOut = createServerFn({ method: "POST" }).handler(async () => {
 export const signOutAll = createServerFn({ method: "POST" }).handler(
   async () => {
     const identity = await getIdentity();
-    if (identity) await db.sessions.deleteAllForUser(identity.userId);
+    if (identity) await db.sessions.deleteWhere({ userId: identity.userId });
     sessionCookie.clear();
   },
 );

@@ -103,10 +103,9 @@ export const changeEmail = createServerFn({ method: "POST" })
     const verified = await confirmOtp.verify(data);
     if (!verified.success) return { success: false };
 
-    const user = await db.users.updateEmail(
-      identity.userId,
-      verified.data.identifier,
-    );
+    const user = await db.users.update(identity.userId, {
+      email: verified.data.identifier,
+    });
     if (!user) return { success: false };
 
     return { success: true, viewer: user };
@@ -155,7 +154,7 @@ export const deleteAccountSF = createServerFn({ method: "POST" })
     // be checked against the email on file
     if (verified.data.identifier !== user.email) return { success: false };
 
-    await db.sessions.deleteAllForUser(user.userId);
+    await db.sessions.deleteWhere({ userId: user.userId });
     await db.users.delete(user.userId);
     sessionCookie.clear();
 
@@ -182,7 +181,7 @@ export const signOut = createServerFn({ method: "POST" }).handler(async () => {
 export const signOutAll = createServerFn({ method: "POST" }).handler(
   async () => {
     const identity = await getIdentity();
-    if (identity) await db.sessions.deleteAllForUser(identity.userId);
+    if (identity) await db.sessions.deleteWhere({ userId: identity.userId });
     sessionCookie.clear();
   },
 );

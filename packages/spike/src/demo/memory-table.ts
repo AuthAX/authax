@@ -64,6 +64,15 @@ export function makeMemoryTable<Row extends object>(
       return row;
     },
 
+    /** Removes every row whose fields equal the ones given and returns them */
+    deleteWhere: async (match: Partial<Row>) => {
+      const removed = where(match);
+
+      for (const row of removed) rows.delete(String(row[key]));
+
+      return removed;
+    },
+
     /** Every row whose fields equal the ones given */
     where: async (match: Partial<Row>) => where(match),
 
