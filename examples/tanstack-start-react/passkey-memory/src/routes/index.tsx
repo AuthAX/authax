@@ -8,6 +8,8 @@ import {
   verifyAddPasskey,
   listPasskeys,
   removePasskey,
+  requestDeleteAccountSF,
+  deleteAccountSF,
   signOut,
   signOutAll,
   getViewer,
@@ -86,6 +88,12 @@ function Authenticated(props: {
     onSuccess: () => props.onChanged(),
   });
 
+  const deleteAccount = usePasskeyAuthentication({
+    start: () => requestDeleteAccountSF(),
+    verify: (credential) => deleteAccountSF({ data: { credential } }),
+    onSuccess: () => props.onChanged(),
+  });
+
   const handleRemovePasskey = async (credentialId: string) => {
     const result = await removePasskey({ data: { credentialId } });
     if (result.success) {
@@ -125,6 +133,17 @@ function Authenticated(props: {
       >
         Sign out all devices
       </Button>
+      <Button
+        variant="secondary"
+        onClick={deleteAccount.submit}
+        disabled={deleteAccount.loading}
+      >
+        Delete account
+      </Button>
+
+      {deleteAccount.error !== null ? (
+        <div className="text-center text-red-500">{deleteAccount.error}</div>
+      ) : null}
     </Page>
   );
 }

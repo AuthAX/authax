@@ -201,6 +201,60 @@ export const removePasskey = createServerFn({ method: "POST" })
   });
 
 /**
+ * Start deleting the account server function
+ *
+ * Requires an active session. Returns WebAuthn authentication options, so the
+ * person confirms with a passkey.
+ */
+export const requestDeleteAccountSF = createServerFn({
+  method: "POST",
+}).handler(async () => {
+  const identity = await getIdentity();
+  if (!identity) return { success: false as const };
+
+  return {
+    success: true as const,
+    options: await passkey.beginAuthentication(),
+  };
+});
+
+/**
+ * Delete account
+ *
+ * Verifies the passkey assertion, then deletes the user, their passkeys, and
+ * every session of theirs. Requires an active session.
+ */
+export const deleteAccountSF = createServerFn({ method: "POST" })
+  .validator(z.object({ credential: authenticationCredentialSchema }))
+  .handler(async ({ data }) => {
+    const identity = await getIdentity();
+    if (!identity) return { success: false as const };
+
+    const result = await passkey.finishAuthentication(data.credential);
+
+    if (!result.success) {
+      console.log("[passkey] refused:", result.error);
+
+      return { success: false as const };
+    }
+
+    // Verification succeeds for any stored passkey, so the passkey has to
+    // belong to the user in the session
+    if (result.data.userHandle !== identity.userId) {
+      return { success: false as const };
+    }
+
+    const passkeys = await db.credentials.where({ userId: identity.userId });
+
+    for (const { id } of passkeys) await db.credentials.delete(id);
+    await db.sessions.deleteAllForUser(identity.userId);
+    await db.users.delete(identity.userId);
+    sessionCookie.clear();
+
+    return { success: true as const };
+  });
+
+/**
  * Server function: Sign out
  *
  * Ends the current session and clears the session cookie.
