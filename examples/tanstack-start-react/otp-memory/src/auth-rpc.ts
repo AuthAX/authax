@@ -1,7 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { db } from "./db";
-import { confirmOtp, sessionManager, signInOtp } from "./auth";
+import {
+  confirmOtp,
+  deleteAccountOtp,
+  sessionManager,
+  signInOtp,
+} from "./auth";
 import { sessionCookie } from "./session-cookie";
 
 /** The session behind the request's cookie, null when there is none */
@@ -103,6 +108,56 @@ export const changeEmail = createServerFn({ method: "POST" })
     if (!user) return { success: false };
 
     return { success: true, viewer: user };
+  });
+
+/**
+ * Send OTP to confirm deleting the account server function
+ *
+ * Requires an active session. Sends to the email on file, so the client names
+ * no address. Returns the ticket the client sends back with the OTP.
+ */
+export const requestDeleteAccountSF = createServerFn({
+  method: "POST",
+}).handler(async () => {
+  const identity = await getIdentity();
+  if (!identity) return { success: false as const };
+
+  const user = await db.users.get(identity.userId);
+  if (!user) return { success: false as const };
+
+  return {
+    success: true as const,
+    ticket: await deleteAccountOtp.send(user.email),
+  };
+});
+
+/**
+ * Delete account
+ *
+ * Verifies the OTP that was sent to the email on file, then deletes the user
+ * and every session of theirs. Requires an active session.
+ */
+export const deleteAccountSF = createServerFn({ method: "POST" })
+  .validator(verifyOtpSchema)
+  .handler(async ({ data }) => {
+    const identity = await getIdentity();
+    if (!identity) return { success: false };
+
+    const user = await db.users.get(identity.userId);
+    if (!user) return { success: false };
+
+    const verified = await deleteAccountOtp.verify(data);
+    if (!verified.success) return { success: false };
+
+    // Verify succeeds for an OTP sent to any address, so the address has to
+    // be checked against the email on file
+    if (verified.data.identifier !== user.email) return { success: false };
+
+    await db.sessions.deleteAllForUser(user.userId);
+    await db.users.delete(user.userId);
+    sessionCookie.clear();
+
+    return { success: true };
   });
 
 /**

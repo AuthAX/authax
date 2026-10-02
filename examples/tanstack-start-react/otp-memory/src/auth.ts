@@ -25,7 +25,7 @@ export const sessionManager = makeOpaqueSessionManager<{ userId: string }>({
   ttl: sessionTtl,
 });
 
-/** Where tickets live. Both OTP instances below share it. */
+/** Where tickets live. The OTP instances below share it. */
 const otpTable = {
   store: async (
     ticket: string,
@@ -73,6 +73,16 @@ export const confirmOtp = makeOTP({
   ...otpTable,
   send: async (identifier, otp) => {
     console.log(`[OTP] Confirm new email, ${identifier}: ${otp}`);
+  },
+  ttl: 10 * 60 * 1000,
+  attempts: 3,
+});
+
+/** Confirms that someone who is signed in wants their account deleted */
+export const deleteAccountOtp = makeOTP({
+  ...otpTable,
+  send: async (identifier, otp) => {
+    console.log(`[OTP] Delete account, ${identifier}: ${otp}`);
   },
   ttl: 10 * 60 * 1000,
   attempts: 3,
