@@ -15,7 +15,7 @@ export function makeOpaqueSessionManager<Session extends object>(args: {
   ttl: number;
 }) {
   return {
-    /** Spends the proof and returns the token the session is stored under */
+    /** Checks the proof and returns the token the session is stored under */
     make: async (proof: Proof<unknown>, session: Session) => {
       consumeProof(proof);
 

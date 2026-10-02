@@ -228,13 +228,6 @@ console.log(
   ),
 );
 
-// Reuse the proof. Rejected at runtime
-try {
-  await opaque.make(emailProof.data, { userId: "someone-else" });
-} catch (error) {
-  console.log("REUSE", error instanceof Error ? error.message : error);
-}
-
 // The guard. Never called, it exists to show what does not compile.
 export function withoutProof(userId: string) {
   // @ts-expect-error a session cannot be made without a proof
