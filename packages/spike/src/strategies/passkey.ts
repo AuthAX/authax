@@ -1,5 +1,4 @@
 import { fail, succeed, type Result } from "../result";
-import { issueProof, type Proof } from "../proof";
 import type {
   PasskeyAuthenticationCredential,
   PasskeyRegistrationCredential,
@@ -109,7 +108,7 @@ export function makePasskey(args: {
       credential: PasskeyRegistrationCredential,
     ): Promise<
       Result<
-        Proof<{ credentialId: string; userHandle: string }>,
+        { credentialId: string; userHandle: string },
         "unknown_challenge" | "expired_challenge" | "invalid_credential"
       >
     > => {
@@ -136,12 +135,10 @@ export function makePasskey(args: {
         counter: verified.counter,
       });
 
-      return succeed(
-        issueProof({
-          credentialId: verified.credentialId,
-          userHandle: row.handle,
-        }),
-      );
+      return succeed({
+        credentialId: verified.credentialId,
+        userHandle: row.handle,
+      });
     },
 
     /** Returns the options the browser signs in with */
@@ -157,7 +154,7 @@ export function makePasskey(args: {
       credential: PasskeyAuthenticationCredential,
     ): Promise<
       Result<
-        Proof<{ credentialId: string; userHandle: string }>,
+        { credentialId: string; userHandle: string },
         | "unknown_challenge"
         | "expired_challenge"
         | "unknown_credential"
@@ -192,9 +189,10 @@ export function makePasskey(args: {
 
       await args.setCounter(credential.id, verified.counter);
 
-      return succeed(
-        issueProof({ credentialId: credential.id, userHandle: stored.handle }),
-      );
+      return succeed({
+        credentialId: credential.id,
+        userHandle: stored.handle,
+      });
     },
   };
 }

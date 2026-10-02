@@ -1,5 +1,3 @@
-import { consumeProof, type Proof } from "../proof";
-
 /**
  * The token is a random string the row is stored under. The row is the
  * session with expiresAt added, so a session has no expiresAt of its own.
@@ -15,10 +13,8 @@ export function makeOpaqueSessionManager<Session extends object>(args: {
   ttl: number;
 }) {
   return {
-    /** Checks the proof and returns the token the session is stored under */
-    make: async (proof: Proof<unknown>, session: Session) => {
-      consumeProof(proof);
-
+    /** Returns the token the session is stored under */
+    make: async (session: Session) => {
       const token = crypto.randomUUID();
 
       await args.store(token, {

@@ -111,8 +111,8 @@ const emailProof = await emailOtp.verify({
 });
 if (!emailProof.success) throw new Error(emailProof.error);
 
-const emailSessionId = await opaque.make(emailProof.data, {
-  userId: `user-for-${emailProof.data.proven.identifier}`,
+const emailSessionId = await opaque.make({
+  userId: `user-for-${emailProof.data.identifier}`,
 });
 console.log("SESSION", await opaque.get(emailSessionId));
 
@@ -125,8 +125,8 @@ const smsProof = await smsOtp.verify({
 });
 if (!smsProof.success) throw new Error(smsProof.error);
 
-const smsSessionId = await opaque.make(smsProof.data, {
-  userId: `user-for-${smsProof.data.proven.identifier}`,
+const smsSessionId = await opaque.make({
+  userId: `user-for-${smsProof.data.identifier}`,
 });
 console.log("SESSION", await opaque.get(smsSessionId));
 
@@ -143,8 +143,8 @@ const registered = await passkey.finishRegistration(
 );
 if (!registered.success) throw new Error(registered.error);
 
-const signUpSessionId = await opaque.make(registered.data, {
-  userId: registered.data.proven.userHandle,
+const signUpSessionId = await opaque.make({
+  userId: registered.data.userHandle,
 });
 console.log("SESSION", await opaque.get(signUpSessionId));
 
@@ -155,8 +155,8 @@ const authenticated = await passkey.finishAuthentication(
 );
 if (!authenticated.success) throw new Error(authenticated.error);
 
-const signInSessionId = await opaque.make(authenticated.data, {
-  userId: authenticated.data.proven.userHandle,
+const signInSessionId = await opaque.make({
+  userId: authenticated.data.userHandle,
 });
 console.log("SESSION", await opaque.get(signInSessionId));
 
@@ -171,7 +171,7 @@ const add = await passkey.beginRegistration({
 });
 const added = await passkey.finishRegistration(await authenticator.create(add));
 if (!added.success) throw new Error(added.error);
-console.log("ADDED", added.data.proven);
+console.log("ADDED", added.data);
 
 // Signed session manager. Same three steps, no table. The token carries the
 // session
@@ -187,8 +187,8 @@ const signedProof = await emailOtp.verify({
 });
 if (!signedProof.success) throw new Error(signedProof.error);
 
-const token = await signed.make(signedProof.data, {
-  userId: `user-for-${signedProof.data.proven.identifier}`,
+const token = await signed.make({
+  userId: `user-for-${signedProof.data.identifier}`,
 });
 console.log("TOKEN", token);
 console.log("SIGNED SESSION", await signed.get(token));
@@ -227,9 +227,3 @@ console.log(
     ),
   ),
 );
-
-// The guard. Never called, it exists to show what does not compile.
-export function withoutProof(userId: string) {
-  // @ts-expect-error a session cannot be made without a proof
-  return opaque.make({ userId }, { userId });
-}

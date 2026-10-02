@@ -1,5 +1,3 @@
-import { consumeProof, type Proof } from "../proof";
-
 /**
  * Stateless. The session travels inside the token, signed so it cannot be
  * altered. Nothing is stored, so there is nothing to end. A token is valid
@@ -20,9 +18,7 @@ export function makeSignedSessionManager<Session extends object>(args: {
   );
 
   return {
-    make: async (proof: Proof<unknown>, session: Session) => {
-      consumeProof(proof);
-
+    make: async (session: Session) => {
       const payload = encode(
         JSON.stringify({ session, exp: Date.now() + args.ttl }),
       );

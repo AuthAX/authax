@@ -62,13 +62,13 @@ export const verifyRegistration = createServerFn({ method: "POST" })
       return { success: false as const };
     }
 
-    const userId = result.data.proven.userHandle;
+    const userId = result.data.userHandle;
     const { isNew } = await db.users.findOrInsert({ userId }, { userId });
 
     // A ceremony that was started to add a passkey signs nobody up
     if (!isNew) return { success: false as const };
 
-    sessionCookie.set(await sessionManager.make(result.data, { userId }));
+    sessionCookie.set(await sessionManager.make({ userId }));
 
     return { success: true as const };
   });
@@ -116,8 +116,8 @@ export const verifyAddPasskey = createServerFn({ method: "POST" })
 
     // The ceremony has to be one this user started. The passkey is already
     // stored when the answer comes back, so it is removed again.
-    if (result.data.proven.userHandle !== identity.userId) {
-      await db.credentials.delete(result.data.proven.credentialId);
+    if (result.data.userHandle !== identity.userId) {
+      await db.credentials.delete(result.data.credentialId);
 
       return { success: false as const };
     }
@@ -155,9 +155,7 @@ export const verifyAuthentication = createServerFn({ method: "POST" })
     }
 
     sessionCookie.set(
-      await sessionManager.make(result.data, {
-        userId: result.data.proven.userHandle,
-      }),
+      await sessionManager.make({ userId: result.data.userHandle }),
     );
 
     return { success: true as const };

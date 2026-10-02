@@ -1,3 +1,6 @@
+// Not used while the spike runs without a proof. Kept as a reference for when
+// a proof comes back.
+
 /** Marks the type so a proof cannot be written by hand. Never exported. */
 const brand: unique symbol = Symbol("proof");
 

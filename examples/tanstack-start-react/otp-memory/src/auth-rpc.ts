@@ -52,15 +52,13 @@ export const verifyOtp = createServerFn({ method: "POST" })
 
     if (!result.success) return { success: false };
 
-    const { identifier } = result.data.proven;
+    const { identifier } = result.data;
     const { row: user, isNew } = await db.users.findOrInsert(
       { email: identifier },
       { userId: crypto.randomUUID(), email: identifier },
     );
 
-    sessionCookie.set(
-      await sessionManager.make(result.data, { userId: user.userId }),
-    );
+    sessionCookie.set(await sessionManager.make({ userId: user.userId }));
 
     return { success: true, isNew };
   });
@@ -100,7 +98,7 @@ export const changeEmail = createServerFn({ method: "POST" })
 
     const user = await db.users.updateEmail(
       identity.userId,
-      verified.data.proven.identifier,
+      verified.data.identifier,
     );
     if (!user) return { success: false };
 

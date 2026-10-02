@@ -1,5 +1,4 @@
 import { fail, succeed, type Result } from "../result";
-import { issueProof, type Proof } from "../proof";
 
 /** What the app stores for one otp request */
 type OtpRow = {
@@ -51,7 +50,7 @@ export function makeOTP(args: {
       otp: string;
     }): Promise<
       Result<
-        Proof<{ identifier: string }>,
+        { identifier: string },
         "unknown_ticket" | "expired_otp" | "wrong_otp"
       >
     > => {
@@ -73,7 +72,7 @@ export function makeOTP(args: {
         return fail("wrong_otp");
       }
 
-      return succeed(issueProof({ identifier: row.identifier }));
+      return succeed({ identifier: row.identifier });
     },
   };
 }
