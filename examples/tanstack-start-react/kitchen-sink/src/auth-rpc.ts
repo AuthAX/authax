@@ -1,13 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { analytics } from "@repo/spike/demo";
 import { z } from "zod";
 import { db } from "./db";
-import {
-  confirmOtp,
-  deleteAccountOtp,
-  sessionManager,
-  signInOtp,
-} from "./auth";
+import { confirmOtp, deleteAccountOtp, sessionManager } from "./auth";
 import { sessionCookie } from "./session-cookie";
 
 /** The session behind the request's cookie, null when there is none */
@@ -31,44 +25,6 @@ export const verifyOtpSchema = z.object({
   ticket: z.string(),
   otp: z.string().length(6),
 });
-
-/**
- * Send OTP to identifier server function
- *
- * Returns the ticket the client sends back with the OTP.
- */
-export const signInOtpSF = createServerFn({ method: "POST" })
-  .validator(requestOtpSchema)
-  .handler(async ({ data }) => ({
-    success: true,
-    ticket: await signInOtp.send(data.identifier),
-  }));
-
-/**
- * Verify OTP server function
- *
- * Authenticates with the OTP, finds or creates the user, and establishes a
- * session. Returns isNew to distinguish sign-up from sign-in (for analytics,
- * onboarding, etc.).
- */
-export const verifyOtp = createServerFn({ method: "POST" })
-  .validator(verifyOtpSchema)
-  .handler(async ({ data }) => {
-    const result = await signInOtp.verify(data);
-
-    if (!result.success) return { success: false };
-
-    const { identifier } = result.data;
-    const { row: user, isNew } = await db.users.findOrInsert(
-      { email: identifier },
-      { userId: crypto.randomUUID(), email: identifier },
-    );
-
-    sessionCookie.set(await sessionManager.make({ userId: user.userId }));
-    analytics.track(isNew ? "sign_up" : "sign_in", user.userId);
-
-    return { success: true, isNew };
-  });
 
 /**
  * Send OTP to a new email server function

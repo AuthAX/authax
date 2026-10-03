@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { makeAuthClient } from "@repo/spike";
 import {
-  signInOtpSF,
-  verifyOtp,
   requestChangeEmail,
   changeEmail,
   requestDeleteAccountSF,
@@ -30,6 +29,8 @@ export const Route = createFileRoute("/")({
 
 type Viewer = { userId: string; email: string };
 
+const authax = makeAuthClient("/api/auth");
+
 function AuthFlow(props: { onSignedIn: () => void }) {
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
@@ -43,7 +44,7 @@ function AuthFlow(props: { onSignedIn: () => void }) {
         as="form"
         onSubmit={async (e) => {
           e.preventDefault();
-          const result = await signInOtpSF({ data: { identifier: email } });
+          const result = await authax.otpSend(email);
           if (result.success) {
             setTicket(result.ticket);
             setStep("otp");
@@ -70,9 +71,7 @@ function AuthFlow(props: { onSignedIn: () => void }) {
       as="form"
       onSubmit={async (e) => {
         e.preventDefault();
-        const result = await verifyOtp({
-          data: { ticket, otp },
-        });
+        const result = await authax.otpVerify({ ticket, otp });
         if (result.success) {
           props.onSignedIn();
         } else {
@@ -95,10 +94,15 @@ function AuthFlow(props: { onSignedIn: () => void }) {
         variant="secondary"
         type="button"
         onClick={async () => {
-          const result = await signInOtpSF({ data: { identifier: email } });
-          setTicket(result.ticket);
-          setOtp("");
-          setError(null);
+          const result = await authax.otpSend(email);
+
+          if (result.success) {
+            setTicket(result.ticket);
+            setOtp("");
+            setError(null);
+          } else {
+            setError("Failed to send one-time password");
+          }
         }}
       >
         Send a new one-time password

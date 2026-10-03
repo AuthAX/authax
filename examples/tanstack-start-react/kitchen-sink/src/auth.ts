@@ -1,4 +1,5 @@
-import { makeOpaqueSessionManager, makeOTP } from "@repo/spike";
+import { makeOpaqueSessionManager, makeOtpSignIn, makeOTP } from "@repo/spike";
+import { analytics } from "@repo/spike/demo";
 import { db } from "./db";
 
 /** How long someone stays signed in, in ms. The cookie lives as long. */
@@ -114,3 +115,27 @@ export const deleteAccountOtp = makeOTP({
   ttl: 10 * 60 * 1000,
   attempts: 3,
 });
+
+/** Signs someone in or up by OTP, mounted in routes/api/auth/$.ts */
+export const otpSignIn = makeOtpSignIn({
+  otp: signInOtp,
+  sessionManager,
+  findOrInsert: async (identifier) => {
+    const { row: user, isNew } = await db.users.findOrInsert(
+      { email: identifier },
+      { userId: crypto.randomUUID(), email: identifier },
+    );
+
+    return { user, isNew };
+  },
+  after: ({ user, isNew }) => {
+    analytics.track(isNew ? "sign_up" : "sign_in", user.userId);
+  },
+});
+
+/** The session cookie the auth routes set */
+export const sessionCookieConfig = {
+  name: "session",
+  maxAge: sessionTtl / 1000,
+  secure: process.env.NODE_ENV === "production",
+};
