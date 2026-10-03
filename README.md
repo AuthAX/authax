@@ -15,7 +15,7 @@ Example names combine the authentication flow and storage, with a transport suff
 
 | Flow | TanStack Start | Next.js | Bun | Convex |
 | --- | --- | --- | --- | --- |
-| `otp` | [memory](examples/tanstack-start-react/otp-memory), postgres (planned) | [memory](examples/nextjs/otp-memory) | [memory-cookie](examples/bun-react/otp-memory-cookie), [memory-header](examples/bun-react/otp-memory-header) | [Convex](examples/convex-react/otp) |
+| `otp` | [memory](examples/tanstack-start-react/kitchen-sink), postgres (planned) | [memory](examples/nextjs/otp-memory) | [memory-cookie](examples/bun-react/otp-memory-cookie), [memory-header](examples/bun-react/otp-memory-header) | [Convex](examples/convex-react/otp) |
 | `passkey` | [memory](examples/tanstack-start-react/passkey-memory), postgres (planned) | — | — | — |
 | `otp-passkey` | [memory](examples/tanstack-start-react/otp-passkey-memory), postgres (planned) | — | — | — |
 | `otp-passkey-strict` | [memory](examples/tanstack-start-react/otp-passkey-strict-memory), postgres (planned) | — | — | — |
