@@ -25,17 +25,9 @@ export const sessionManager = makeOpaqueSessionManager<{ userId: string }>({
   ttl: sessionTtl,
 });
 
-/** Where tickets live. The OTP instances below share it. */
-const otpTable = {
-  store: async (
-    ticket: string,
-    row: {
-      identifier: string;
-      otp: string;
-      expiresAt: number;
-      attemptsLeft: number;
-    },
-  ) => {
+/** Signs someone in or up */
+export const signInOtp = makeOTP({
+  store: async (ticket, row) => {
     await db.otps.insert({
       id: ticket,
       email: row.identifier,
@@ -44,7 +36,7 @@ const otpTable = {
       attemptsLeft: row.attemptsLeft,
     });
   },
-  take: async (ticket: string) => {
+  take: async (ticket) => {
     const row = await db.otps.delete(ticket);
 
     if (!row) return null;
@@ -56,11 +48,6 @@ const otpTable = {
       attemptsLeft: row.attemptsLeft,
     };
   },
-};
-
-/** Signs someone in or up */
-export const signInOtp = makeOTP({
-  ...otpTable,
   send: async (identifier, otp) => {
     console.log(`[OTP] Sign in, ${identifier}: ${otp}`);
   },
@@ -70,7 +57,27 @@ export const signInOtp = makeOTP({
 
 /** Confirms a new email address for someone who is signed in */
 export const confirmOtp = makeOTP({
-  ...otpTable,
+  store: async (ticket, row) => {
+    await db.otps.insert({
+      id: ticket,
+      email: row.identifier,
+      otp: row.otp,
+      expiresAt: new Date(row.expiresAt),
+      attemptsLeft: row.attemptsLeft,
+    });
+  },
+  take: async (ticket) => {
+    const row = await db.otps.delete(ticket);
+
+    if (!row) return null;
+
+    return {
+      identifier: row.email,
+      otp: row.otp,
+      expiresAt: row.expiresAt.getTime(),
+      attemptsLeft: row.attemptsLeft,
+    };
+  },
   send: async (identifier, otp) => {
     console.log(`[OTP] Confirm new email, ${identifier}: ${otp}`);
   },
@@ -80,7 +87,27 @@ export const confirmOtp = makeOTP({
 
 /** Confirms that someone who is signed in wants their account deleted */
 export const deleteAccountOtp = makeOTP({
-  ...otpTable,
+  store: async (ticket, row) => {
+    await db.otps.insert({
+      id: ticket,
+      email: row.identifier,
+      otp: row.otp,
+      expiresAt: new Date(row.expiresAt),
+      attemptsLeft: row.attemptsLeft,
+    });
+  },
+  take: async (ticket) => {
+    const row = await db.otps.delete(ticket);
+
+    if (!row) return null;
+
+    return {
+      identifier: row.email,
+      otp: row.otp,
+      expiresAt: row.expiresAt.getTime(),
+      attemptsLeft: row.attemptsLeft,
+    };
+  },
   send: async (identifier, otp) => {
     console.log(`[OTP] Delete account, ${identifier}: ${otp}`);
   },

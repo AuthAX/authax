@@ -11,13 +11,11 @@ export const db = {
     userId: string;
     email: string;
   }>("userId"),
-
   sessions: makeMemoryTable<{
     id: string;
     userId: string;
     expiresAt: Date;
   }>("id"),
-
   otps: makeMemoryTable<{
     id: string;
     email: string;

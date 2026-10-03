@@ -2,7 +2,9 @@ import { fail, succeed, type Result } from "../result";
 
 /** What the app stores for one otp request */
 type OtpRow = {
+  /** The identifier the otp is being sent to (email address or phone number) */
   identifier: string;
+  /** The one-time password itself */
   otp: string;
   /** When the otp stops working, in ms since the epoch */
   expiresAt: number;
