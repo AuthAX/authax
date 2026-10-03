@@ -1,0 +1,12 @@
+{
+  "name": "@repo/spike",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./demo": "./src/demo/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc"
+  }
+}

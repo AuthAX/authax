@@ -9,25 +9,18 @@ import { makeMemoryTable } from "@repo/spike/demo";
 export const db = {
   users: makeMemoryTable<{
     userId: string;
+    email: string;
   }>("userId"),
-
   sessions: makeMemoryTable<{
     id: string;
     userId: string;
     expiresAt: Date;
   }>("id"),
-
-  credentials: makeMemoryTable<{
+  otps: makeMemoryTable<{
     id: string;
-    userId: string;
-    publicKey: string;
-    counter: number;
-  }>("id"),
-
-  challenges: makeMemoryTable<{
-    id: string;
-    /** Who a registration is for. Null when the challenge is for signing in. */
-    userId: string | null;
+    email: string;
+    otp: string;
     expiresAt: Date;
+    attemptsLeft: number;
   }>("id"),
 };

@@ -109,14 +109,14 @@
         "typescript": "^6.0.3",
       },
     },
-    "examples/tanstack-start-react/otp-memory": {
-      "name": "@repo/example-tanstack-otp",
+    "examples/tanstack-start-react/kitchen-sink": {
+      "name": "@repo/example-tanstack-kitchen-sink",
       "dependencies": {
         "@repo/shared-react": "workspace:*",
+        "@repo/spike": "workspace:*",
         "@tailwindcss/vite": "^4.3.3",
         "@tanstack/react-router": "^1.170.39",
         "@tanstack/react-start": "^1.168.58",
-        "authax": "workspace:*",
         "react": "^19.3.0",
         "react-dom": "^19.3.0",
         "tailwindcss": "^4.3.3",
@@ -181,11 +181,10 @@
       "name": "@repo/example-tanstack-passkey",
       "dependencies": {
         "@repo/shared-react": "workspace:*",
-        "@repo/shared-webauthn": "workspace:*",
+        "@repo/spike": "workspace:*",
         "@tailwindcss/vite": "^4.3.3",
         "@tanstack/react-router": "^1.170.39",
         "@tanstack/react-start": "^1.168.58",
-        "authax": "workspace:*",
         "react": "^19.3.0",
         "react-dom": "^19.3.0",
         "tailwindcss": "^4.3.3",
@@ -204,11 +203,10 @@
       "name": "@repo/example-tanstack-passkey-otp",
       "dependencies": {
         "@repo/shared-react": "workspace:*",
-        "@repo/shared-webauthn": "workspace:*",
+        "@repo/spike": "workspace:*",
         "@tailwindcss/vite": "^4.3.3",
         "@tanstack/react-router": "^1.170.39",
         "@tanstack/react-start": "^1.168.58",
-        "authax": "workspace:*",
         "react": "^19.3.0",
         "react-dom": "^19.3.0",
         "tailwindcss": "^4.3.3",
@@ -241,6 +239,9 @@
         "@tanstack/react-start",
         "next",
       ],
+    },
+    "packages/spike": {
+      "name": "@repo/spike",
     },
   },
   "trustedDependencies": [
@@ -495,7 +496,7 @@
 
     "@repo/example-nextjs-otp": ["@repo/example-nextjs-otp@workspace:examples/nextjs/otp-memory"],
 
-    "@repo/example-tanstack-otp": ["@repo/example-tanstack-otp@workspace:examples/tanstack-start-react/otp-memory"],
+    "@repo/example-tanstack-kitchen-sink": ["@repo/example-tanstack-kitchen-sink@workspace:examples/tanstack-start-react/kitchen-sink"],
 
     "@repo/example-tanstack-otp-passkey": ["@repo/example-tanstack-otp-passkey@workspace:examples/tanstack-start-react/otp-passkey-memory"],
 
@@ -508,6 +509,8 @@
     "@repo/shared-react": ["@repo/shared-react@workspace:examples/shared/react"],
 
     "@repo/shared-webauthn": ["@repo/shared-webauthn@workspace:examples/shared/webauthn"],
+
+    "@repo/spike": ["@repo/spike@workspace:packages/spike"],
 
     "@rolldown/binding-android-arm-eabi": ["@rolldown/binding-android-arm-eabi@1.2.11", "", { "os": "android", "cpu": "arm" }, "sha512-A5kXfGKvKWWZE0TtPrfsvT+q4Y5d1QG8gGUzpYjGydM+fARM9MuX90PrXYXe0XbsDVgyxxNzHo6giCj90bsFNw=="],
 

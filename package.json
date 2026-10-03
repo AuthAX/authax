@@ -2,6 +2,7 @@
   "name": "@repo/monorepo",
   "private": true,
   "type": "module",
+  "packageManager": "bun@1.4.2",
   "workspaces": [
     "packages/*",
     "examples/*/*"
@@ -14,7 +15,7 @@
     "test:run": "vitest run",
     "test:watch": "vitest",
     "typecheck": "bun run --filter '*' typecheck",
-    "check": "bun run format:check && bun run lint:check && bun run test:run && bun run typecheck",
+    "check": "bun install --frozen-lockfile && bun run format:check && bun run lint:check && bun run test:run && bun run typecheck",
     "outdated": "bun outdated --recursive",
     "update": "bun update --recursive",
     "update:latest": "bun update --latest --recursive",

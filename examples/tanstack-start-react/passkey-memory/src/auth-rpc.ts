@@ -1,12 +1,34 @@
 import { createServerFn } from "@tanstack/react-start";
-import {
-  passkeyAuthenticationCredentialSchema,
-  passkeyRegistrationCredentialSchema,
-} from "@repo/shared-webauthn";
+import { analytics } from "@repo/spike/demo";
 import { z } from "zod";
 import { db } from "./db";
-import { auth } from "./auth";
+import { passkey, sessionManager } from "./auth";
 import { sessionCookie } from "./session-cookie";
+
+/** The session behind the request's cookie, null when there is none */
+async function getIdentity() {
+  const token = sessionCookie.get();
+
+  return token === null ? null : sessionManager.get(token);
+}
+
+/** What the browser sends after it created a passkey */
+const registrationCredentialSchema = z.object({
+  response: z.object({
+    clientDataJSON: z.string(),
+    attestationObject: z.string(),
+  }),
+});
+
+/** What the browser sends after it signed in with a passkey */
+const authenticationCredentialSchema = z.object({
+  id: z.string(),
+  response: z.object({
+    clientDataJSON: z.string(),
+    authenticatorData: z.string(),
+    signature: z.string(),
+  }),
+});
 
 /**
  * Server function: Start passkey registration
@@ -15,13 +37,13 @@ import { sessionCookie } from "./session-cookie";
  * application user is provisioned only after the ceremony verifies.
  */
 export const startRegistration = createServerFn({ method: "POST" }).handler(
-  async () => {
-    const result = await auth.strategies.passkeys.createRegistrationOptions();
-
-    if (!result.success) return { success: false as const };
-
-    return { success: true as const, options: result.data };
-  },
+  async () => ({
+    success: true as const,
+    options: await passkey.beginRegistration({
+      handle: crypto.randomUUID(),
+      name: "New user",
+    }),
+  }),
 );
 
 /**
@@ -31,15 +53,24 @@ export const startRegistration = createServerFn({ method: "POST" }).handler(
  * establishes a session.
  */
 export const verifyRegistration = createServerFn({ method: "POST" })
-  .validator(z.object({ credential: passkeyRegistrationCredentialSchema }))
+  .validator(z.object({ credential: registrationCredentialSchema }))
   .handler(async ({ data }) => {
-    const result = await auth.strategies.passkeys.verifyRegistration({
-      credential: data.credential,
-    });
+    const result = await passkey.finishRegistration(data.credential);
 
-    if (!result.success) return { success: false as const };
+    if (!result.success) {
+      console.log("[passkey] refused:", result.error);
 
-    sessionCookie.set(result.data.session.token, result.data.session.expiresAt);
+      return { success: false as const };
+    }
+
+    const userId = result.data.userHandle;
+    const { isNew } = await db.users.findOrInsert({ userId }, { userId });
+
+    // A ceremony that was started to add a passkey signs nobody up
+    if (!isNew) return { success: false as const };
+
+    sessionCookie.set(await sessionManager.make({ userId }));
+    analytics.track("sign_up", userId);
 
     return { success: true as const };
   });
@@ -52,14 +83,16 @@ export const verifyRegistration = createServerFn({ method: "POST" })
  */
 export const startAddPasskey = createServerFn({ method: "POST" }).handler(
   async () => {
-    const result =
-      await auth.strategies.passkeys.createAdditionalRegistrationOptions(
-        sessionCookie.get(),
-      );
+    const identity = await getIdentity();
+    if (!identity) return { success: false as const };
 
-    if (!result.success) return { success: false as const };
-
-    return { success: true as const, options: result.data };
+    return {
+      success: true as const,
+      options: await passkey.beginRegistration({
+        handle: identity.userId,
+        name: identity.userId,
+      }),
+    };
   },
 );
 
@@ -70,14 +103,26 @@ export const startAddPasskey = createServerFn({ method: "POST" }).handler(
  * for the current user. No session is established.
  */
 export const verifyAddPasskey = createServerFn({ method: "POST" })
-  .validator(z.object({ credential: passkeyRegistrationCredentialSchema }))
+  .validator(z.object({ credential: registrationCredentialSchema }))
   .handler(async ({ data }) => {
-    const result = await auth.strategies.passkeys.verifyAdditionalRegistration(
-      sessionCookie.get(),
-      { credential: data.credential },
-    );
+    const identity = await getIdentity();
+    if (!identity) return { success: false as const };
 
-    if (!result.success) return { success: false as const };
+    const result = await passkey.finishRegistration(data.credential);
+
+    if (!result.success) {
+      console.log("[passkey] refused:", result.error);
+
+      return { success: false as const };
+    }
+
+    // The ceremony has to be one this user started. The passkey is already
+    // stored when the answer comes back, so it is removed again.
+    if (result.data.userHandle !== identity.userId) {
+      await db.credentials.delete(result.data.credentialId);
+
+      return { success: false as const };
+    }
 
     return { success: true as const };
   });
@@ -89,17 +134,10 @@ export const verifyAddPasskey = createServerFn({ method: "POST" })
  */
 export const startAuthentication = createServerFn({
   method: "POST",
-}).handler(async () => {
-  const result = await auth.strategies.passkeys.createAuthenticationOptions();
-  return { success: true as const, options: result.data };
-});
-
-/**
- * Verify passkey authentication schema
- */
-const verifyAuthenticationSchema = z.object({
-  credential: passkeyAuthenticationCredentialSchema,
-});
+}).handler(async () => ({
+  success: true as const,
+  options: await passkey.beginAuthentication(),
+}));
 
 /**
  * Verify passkey authentication
@@ -108,15 +146,20 @@ const verifyAuthenticationSchema = z.object({
  * establishes a session.
  */
 export const verifyAuthentication = createServerFn({ method: "POST" })
-  .validator(verifyAuthenticationSchema)
+  .validator(z.object({ credential: authenticationCredentialSchema }))
   .handler(async ({ data }) => {
-    const result = await auth.strategies.passkeys.verifyAuthentication({
-      credential: data.credential,
-    });
+    const result = await passkey.finishAuthentication(data.credential);
 
-    if (!result.success) return { success: false as const };
+    if (!result.success) {
+      console.log("[passkey] refused:", result.error);
 
-    sessionCookie.set(result.data.session.token, result.data.session.expiresAt);
+      return { success: false as const };
+    }
+
+    sessionCookie.set(
+      await sessionManager.make({ userId: result.data.userHandle }),
+    );
+    analytics.track("sign_in", result.data.userHandle);
 
     return { success: true as const };
   });
@@ -127,12 +170,12 @@ export const verifyAuthentication = createServerFn({ method: "POST" })
  * Returns stored credential metadata for the authenticated user.
  */
 export const listPasskeys = createServerFn().handler(async () => {
-  const identity = await auth.session.get(sessionCookie.get());
+  const identity = await getIdentity();
   if (!identity) return { passkeys: [] };
 
-  const passkeys = await db.credentials.list(identity.userId);
+  const passkeys = await db.credentials.where({ userId: identity.userId });
   return {
-    passkeys: passkeys.map((p) => ({ id: p.credentialId })),
+    passkeys: passkeys.map((p) => ({ id: p.id })),
   };
 });
 
@@ -144,16 +187,68 @@ export const listPasskeys = createServerFn().handler(async () => {
 export const removePasskey = createServerFn({ method: "POST" })
   .validator(z.object({ credentialId: z.string() }))
   .handler(async ({ data }) => {
-    const identity = await auth.session.get(sessionCookie.get());
+    const identity = await getIdentity();
     if (!identity) return { success: false as const };
 
-    const passkeys = await db.credentials.list(identity.userId);
+    const passkeys = await db.credentials.where({ userId: identity.userId });
     if (passkeys.length <= 1) return { success: false as const };
 
-    const owns = passkeys.some((p) => p.credentialId === data.credentialId);
+    const owns = passkeys.some((p) => p.id === data.credentialId);
     if (!owns) return { success: false as const };
 
-    db.credentials.delete(data.credentialId);
+    await db.credentials.delete(data.credentialId);
+    return { success: true as const };
+  });
+
+/**
+ * Start deleting the account server function
+ *
+ * Requires an active session. Returns WebAuthn authentication options, so the
+ * person confirms with a passkey.
+ */
+export const requestDeleteAccountSF = createServerFn({
+  method: "POST",
+}).handler(async () => {
+  const identity = await getIdentity();
+  if (!identity) return { success: false as const };
+
+  return {
+    success: true as const,
+    options: await passkey.beginAuthentication(),
+  };
+});
+
+/**
+ * Delete account
+ *
+ * Verifies the passkey assertion, then deletes the user, their passkeys, and
+ * every session of theirs. Requires an active session.
+ */
+export const deleteAccountSF = createServerFn({ method: "POST" })
+  .validator(z.object({ credential: authenticationCredentialSchema }))
+  .handler(async ({ data }) => {
+    const identity = await getIdentity();
+    if (!identity) return { success: false as const };
+
+    const result = await passkey.finishAuthentication(data.credential);
+
+    if (!result.success) {
+      console.log("[passkey] refused:", result.error);
+
+      return { success: false as const };
+    }
+
+    // Verification succeeds for any stored passkey, so the passkey has to
+    // belong to the user in the session
+    if (result.data.userHandle !== identity.userId) {
+      return { success: false as const };
+    }
+
+    await db.credentials.deleteWhere({ userId: identity.userId });
+    await db.sessions.deleteWhere({ userId: identity.userId });
+    await db.users.delete(identity.userId);
+    sessionCookie.clear();
+
     return { success: true as const };
   });
 
@@ -163,7 +258,9 @@ export const removePasskey = createServerFn({ method: "POST" })
  * Ends the current session and clears the session cookie.
  */
 export const signOut = createServerFn({ method: "POST" }).handler(async () => {
-  await auth.session.end(sessionCookie.get());
+  const token = sessionCookie.get();
+
+  if (token !== null) await sessionManager.end(token);
   sessionCookie.clear();
 });
 
@@ -174,8 +271,8 @@ export const signOut = createServerFn({ method: "POST" }).handler(async () => {
  */
 export const signOutAll = createServerFn({ method: "POST" }).handler(
   async () => {
-    const identity = await auth.session.get(sessionCookie.get());
-    if (identity) db.sessions.deleteAllForUser(identity.userId);
+    const identity = await getIdentity();
+    if (identity) await db.sessions.deleteWhere({ userId: identity.userId });
     sessionCookie.clear();
   },
 );
@@ -186,7 +283,7 @@ export const signOutAll = createServerFn({ method: "POST" }).handler(
  * Returns the current user if authenticated, or null otherwise.
  */
 export const getViewer = createServerFn().handler(async () => {
-  const identity = await auth.session.get(sessionCookie.get());
+  const identity = await getIdentity();
 
-  return identity ? (db.users.get(identity.userId) ?? null) : null;
+  return identity ? db.users.get(identity.userId) : null;
 });
