@@ -13,19 +13,19 @@
     "@repo/shared-react": "workspace:*",
     "@repo/spike": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
-    "@tanstack/react-router": "^1.170.39",
-    "@tanstack/react-start": "^1.168.58",
+    "@tanstack/react-router": "^1.170.41",
+    "@tanstack/react-start": "^1.168.60",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "tailwindcss": "^4.3.3",
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "typescript": "^6.0.3",
-    "vite": "^8.3.1"
+    "vite": "^8.3.2"
   }
 }
