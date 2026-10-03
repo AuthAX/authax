@@ -338,7 +338,7 @@ function App() {
   const router = useRouter();
 
   return (
-    <AuthLayout demo="One-time password demo">
+    <AuthLayout demo="Kitchen sink example">
       {viewer ? (
         <Authenticated
           viewer={viewer}

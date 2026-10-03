@@ -1,4 +1,4 @@
-# otp-memory
+# kitchen-sink
 
 ## License
 

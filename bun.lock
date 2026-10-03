@@ -110,7 +110,7 @@
       },
     },
     "examples/tanstack-start-react/kitchen-sink": {
-      "name": "@repo/example-tanstack-otp",
+      "name": "@repo/example-tanstack-kitchen-sink",
       "dependencies": {
         "@repo/shared-react": "workspace:*",
         "@repo/spike": "workspace:*",
@@ -496,7 +496,7 @@
 
     "@repo/example-nextjs-otp": ["@repo/example-nextjs-otp@workspace:examples/nextjs/otp-memory"],
 
-    "@repo/example-tanstack-otp": ["@repo/example-tanstack-otp@workspace:examples/tanstack-start-react/kitchen-sink"],
+    "@repo/example-tanstack-kitchen-sink": ["@repo/example-tanstack-kitchen-sink@workspace:examples/tanstack-start-react/kitchen-sink"],
 
     "@repo/example-tanstack-otp-passkey": ["@repo/example-tanstack-otp-passkey@workspace:examples/tanstack-start-react/otp-passkey-memory"],
 
