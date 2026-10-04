@@ -14,6 +14,6 @@ const options = {
 export const sessionCookie = {
   get: () => getCookie(name) ?? null,
   set: (token: string) =>
-    setCookie(name, token, { ...options, maxAge: sessionTtl / 1000 }),
+    setCookie(name, token, { ...options, maxAge: sessionTtl }),
   clear: () => setCookie(name, "", { ...options, maxAge: 0 }),
 };

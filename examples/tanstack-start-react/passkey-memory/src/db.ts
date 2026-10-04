@@ -14,7 +14,7 @@ export const db = {
   sessions: makeMemoryTable<{
     id: string;
     userId: string;
-    expiresAt: Date;
+    expiresAt: number;
   }>("id"),
 
   credentials: makeMemoryTable<{
@@ -28,6 +28,6 @@ export const db = {
     id: string;
     /** Who a registration is for. Null when the challenge is for signing in. */
     userId: string | null;
-    expiresAt: Date;
+    expiresAt: number;
   }>("id"),
 };

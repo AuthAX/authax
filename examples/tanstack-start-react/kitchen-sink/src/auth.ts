@@ -7,23 +7,21 @@ import {
 import { analytics } from "@repo/spike/demo";
 import { db } from "./db";
 
-/** How long someone stays signed in, in ms. The cookie lives as long. */
-export const sessionTtl = 30 * 24 * 60 * 60 * 1000;
+/** How long someone stays signed in, in seconds. The cookie lives as long. */
+export const sessionTtl = 30 * 24 * 60 * 60;
 
 export const sessionManager = makeOpaqueSessionManager<{ userId: string }>({
   store: async (token, row) => {
     await db.sessions.insert({
       id: token,
       userId: row.userId,
-      expiresAt: new Date(row.expiresAt),
+      expiresAt: row.expiresAt,
     });
   },
   get: async (token) => {
     const row = await db.sessions.get(token);
 
-    return row
-      ? { userId: row.userId, expiresAt: row.expiresAt.getTime() }
-      : null;
+    return row ? { userId: row.userId, expiresAt: row.expiresAt } : null;
   },
   delete: async (token) => {
     await db.sessions.delete(token);
@@ -41,7 +39,7 @@ export const confirmOtp = makeOTP({
   send: async ({ to, otp }) => {
     console.log(`[OTP] Confirm new email, ${to}: ${otp}`);
   },
-  ttl: 10 * 60 * 1000,
+  ttl: 10 * 60,
   attempts: 3,
 });
 
@@ -74,6 +72,6 @@ export const otpAuthFlow = makeOtpAuthFlow({
 /** The session cookie the auth routes set */
 export const sessionCookieConfig = {
   name: "session",
-  maxAge: sessionTtl / 1000,
+  maxAge: sessionTtl,
   secure: process.env.NODE_ENV === "production",
 };

@@ -75,7 +75,7 @@ const server = Bun.serve({
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
           path: "/",
-          maxAge: sessionTtl / 1000,
+          maxAge: sessionTtl,
         });
 
         return Response.json({ email: user.email });

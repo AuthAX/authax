@@ -3,13 +3,13 @@
  * session with expiresAt added, so a session has no expiresAt of its own.
  */
 export function makeOpaqueSessionManager<Session extends object>(args: {
-  /** Stores a session row under the token. expiresAt is in ms since the epoch. */
+  /** Stores a session row under the token. expiresAt is in seconds since the epoch. */
   store: (token: string, row: Session & { expiresAt: number }) => Promise<void>;
   /** Reads the session row for a token, null when there is none */
   get: (token: string) => Promise<(Session & { expiresAt: number }) | null>;
   /** Removes the session row for a token. Does nothing when there is none. */
   delete: (token: string) => Promise<void>;
-  /** Lifetime of a session in ms */
+  /** Lifetime of a session in seconds */
   ttl: number;
 }) {
   return {
@@ -19,7 +19,7 @@ export function makeOpaqueSessionManager<Session extends object>(args: {
 
       await args.store(token, {
         ...session,
-        expiresAt: Date.now() + args.ttl,
+        expiresAt: Math.floor(Date.now() / 1000) + args.ttl,
       });
 
       return token;
@@ -30,7 +30,7 @@ export function makeOpaqueSessionManager<Session extends object>(args: {
       const row = await args.get(token);
 
       if (row === null) return null;
-      if (row.expiresAt <= Date.now()) return null;
+      if (row.expiresAt <= Math.floor(Date.now() / 1000)) return null;
 
       return row;
     },

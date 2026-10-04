@@ -19,7 +19,7 @@ import {
 type ChallengeRow = {
   /** Who a registration is for. Null when the challenge is for authentication. */
   handle: string | null;
-  /** When the challenge stops working, in ms since the epoch */
+  /** When the challenge stops working, in seconds since the epoch */
   expiresAt: number;
 };
 
@@ -44,7 +44,7 @@ export function makePasskey(args: {
   rpName: string;
   /** Every origin a ceremony may run from, as scheme, host, and port */
   origins: string[];
-  /** Lifetime of a challenge in ms */
+  /** Lifetime of a challenge in seconds */
   ttl: number;
   /** Stores a challenge row under the challenge */
   storeChallenge: (challenge: string, row: ChallengeRow) => Promise<void>;
@@ -72,7 +72,7 @@ export function makePasskey(args: {
 
     await args.storeChallenge(challenge, {
       handle,
-      expiresAt: Date.now() + args.ttl,
+      expiresAt: Math.floor(Date.now() / 1000) + args.ttl,
     });
 
     return challenge;
@@ -119,7 +119,8 @@ export function makePasskey(args: {
       const row = await args.takeChallenge(clientData.challenge);
 
       if (row === null || row.handle === null) return fail("unknown_challenge");
-      if (row.expiresAt <= Date.now()) return fail("expired_challenge");
+      if (row.expiresAt <= Math.floor(Date.now() / 1000))
+        return fail("expired_challenge");
 
       const verified = await verifyRegistrationCredential(
         credential,
@@ -168,7 +169,8 @@ export function makePasskey(args: {
       const row = await args.takeChallenge(clientData.challenge);
 
       if (row === null || row.handle !== null) return fail("unknown_challenge");
-      if (row.expiresAt <= Date.now()) return fail("expired_challenge");
+      if (row.expiresAt <= Math.floor(Date.now() / 1000))
+        return fail("expired_challenge");
 
       const stored = await args.getCredential(credential.id);
 

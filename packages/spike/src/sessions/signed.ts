@@ -6,7 +6,7 @@
 export function makeSignedSessionManager<Session extends object>(args: {
   /** HMAC secret. Anyone holding it can mint a session. */
   secret: string;
-  /** Lifetime of a token in ms */
+  /** Lifetime of a token in seconds */
   ttl: number;
 }) {
   const key = crypto.subtle.importKey(
@@ -20,7 +20,10 @@ export function makeSignedSessionManager<Session extends object>(args: {
   return {
     make: async (session: Session) => {
       const payload = encode(
-        JSON.stringify({ session, exp: Date.now() + args.ttl }),
+        JSON.stringify({
+          session,
+          exp: Math.floor(Date.now() / 1000) + args.ttl,
+        }),
       );
       const signature = await crypto.subtle.sign(
         "HMAC",
@@ -50,7 +53,7 @@ export function makeSignedSessionManager<Session extends object>(args: {
         session: Session;
         exp: number;
       };
-      if (exp < Date.now()) return null;
+      if (exp <= Math.floor(Date.now() / 1000)) return null;
 
       return session;
     },

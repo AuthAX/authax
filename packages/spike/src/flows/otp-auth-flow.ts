@@ -20,7 +20,7 @@ export type OtpVerifyBody =
   { success: true; isNew: boolean } | { success: false; error: string };
 
 /** Ten minutes and three guesses, to spread into makeOtpAuthFlow */
-export const recommendedOtpConfig = { otpTtl: 10 * 60 * 1000, otpAttempts: 3 };
+export const recommendedOtpConfig = { otpTtl: 10 * 60, otpAttempts: 3 };
 
 /**
  * Sign in or sign up by OTP, in two calls. otp-send sends an OTP and returns
@@ -42,7 +42,7 @@ export function makeOtpAuthFlow<User extends { userId: string }>(args: {
   takeOtp: (ticket: string) => Promise<OtpRow | null>;
   /** Delivers the OTP to an email address or a phone number */
   sendOtp: (message: { to: string; otp: string }) => Promise<void>;
-  /** Lifetime of an OTP in ms */
+  /** Lifetime of an OTP in seconds */
   otpTtl: number;
   /** How many guesses one ticket allows */
   otpAttempts: number;

@@ -49,7 +49,7 @@ const opaque = makeOpaqueSessionManager<{ userId: string }>({
   delete: async (token) => {
     await sessionsTable.delete(token);
   },
-  ttl: 30 * 24 * 60 * 60 * 1000,
+  ttl: 30 * 24 * 60 * 60,
 });
 
 const emailOtp = makeOTP({
@@ -62,7 +62,7 @@ const emailOtp = makeOTP({
     console.log("email to:", to, "otp:", otp);
     delivered.set(to, otp);
   },
-  ttl: 10 * 60 * 1000,
+  ttl: 10 * 60,
   attempts: 3,
 });
 
@@ -76,7 +76,7 @@ const smsOtp = makeOTP({
     console.log("sms to:", to, "otp:", otp);
     delivered.set(to, otp);
   },
-  ttl: 10 * 60 * 1000,
+  ttl: 10 * 60,
   attempts: 3,
 });
 
@@ -84,7 +84,7 @@ const passkey = makePasskey({
   rpId: "localhost",
   rpName: "Spike",
   origins: ["http://localhost:3000"],
-  ttl: 5 * 60 * 1000,
+  ttl: 5 * 60,
   storeChallenge: async (challenge, row) => {
     await challengesTable.insert({ challenge, ...row });
   },
@@ -179,7 +179,7 @@ console.log("ADDED", added.data);
 // session
 const signed = makeSignedSessionManager<{ userId: string }>({
   secret: "spike-secret",
-  ttl: 60 * 60 * 1000,
+  ttl: 60 * 60,
 });
 
 const signedTicket = await emailOtp.send("ripley@example.com");

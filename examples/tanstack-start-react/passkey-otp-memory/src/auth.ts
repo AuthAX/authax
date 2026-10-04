@@ -1,23 +1,21 @@
 import { makeOpaqueSessionManager, makeOTP, makePasskey } from "@repo/spike";
 import { db } from "./db";
 
-/** How long someone stays signed in, in ms. The cookie lives as long. */
-export const sessionTtl = 30 * 24 * 60 * 60 * 1000;
+/** How long someone stays signed in, in seconds. The cookie lives as long. */
+export const sessionTtl = 30 * 24 * 60 * 60;
 
 export const sessionManager = makeOpaqueSessionManager<{ userId: string }>({
   store: async (token, row) => {
     await db.sessions.insert({
       id: token,
       userId: row.userId,
-      expiresAt: new Date(row.expiresAt),
+      expiresAt: row.expiresAt,
     });
   },
   get: async (token) => {
     const row = await db.sessions.get(token);
 
-    return row
-      ? { userId: row.userId, expiresAt: row.expiresAt.getTime() }
-      : null;
+    return row ? { userId: row.userId, expiresAt: row.expiresAt } : null;
   },
   delete: async (token) => {
     await db.sessions.delete(token);
@@ -38,7 +36,7 @@ export const addEmailOtp = makeOTP({
   send: async ({ to, otp }) => {
     console.log(`[OTP] Add email, ${to}: ${otp}`);
   },
-  ttl: 10 * 60 * 1000,
+  ttl: 10 * 60,
   attempts: 3,
 });
 
@@ -46,20 +44,18 @@ export const passkey = makePasskey({
   rpId: "localhost",
   rpName: "Auth Passkey → OTP Demo",
   origins: ["http://localhost:3104"],
-  ttl: 5 * 60 * 1000,
+  ttl: 5 * 60,
   storeChallenge: async (challenge, row) => {
     await db.challenges.insert({
       id: challenge,
       userId: row.handle,
-      expiresAt: new Date(row.expiresAt),
+      expiresAt: row.expiresAt,
     });
   },
   takeChallenge: async (challenge) => {
     const row = await db.challenges.delete(challenge);
 
-    return row
-      ? { handle: row.userId, expiresAt: row.expiresAt.getTime() }
-      : null;
+    return row ? { handle: row.userId, expiresAt: row.expiresAt } : null;
   },
   storeCredential: async (credentialId, row) => {
     await db.credentials.insert({

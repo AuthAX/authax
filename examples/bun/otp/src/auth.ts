@@ -1,8 +1,8 @@
 import { makeOpaqueSessionManager, makeOTP } from "@repo/spike";
 import { db } from "./db";
 
-/** How long someone stays signed in, in ms */
-export const sessionTtl = 30 * 24 * 60 * 60 * 1000;
+/** How long someone stays signed in, in seconds */
+export const sessionTtl = 30 * 24 * 60 * 60;
 
 export const sessionManager = makeOpaqueSessionManager<{ userId: string }>({
   store: async (token, row) => {
@@ -12,7 +12,11 @@ export const sessionManager = makeOpaqueSessionManager<{ userId: string }>({
       expiresAt: row.expiresAt,
     });
   },
-  get: async (token) => db.sessions.get(token),
+  get: async (token) => {
+    const row = await db.sessions.get(token);
+
+    return row ? { userId: row.userId, expiresAt: row.expiresAt } : null;
+  },
   delete: async (token) => {
     await db.sessions.delete(token);
   },
@@ -29,6 +33,6 @@ export const signInOtp = makeOTP({
   send: async ({ to, otp }) => {
     console.log(`[OTP] Sign in, ${to}: ${otp}`);
   },
-  ttl: 10 * 60 * 1000,
+  ttl: 10 * 60,
   attempts: 3,
 });

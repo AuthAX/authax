@@ -8,7 +8,7 @@ export type OtpRow = {
   identifier: string;
   /** The one-time password itself */
   otp: string;
-  /** When the otp stops working, in ms since the epoch */
+  /** When the otp stops working, in seconds since the epoch */
   expiresAt: number;
   /** How many guesses the ticket still allows */
   attemptsLeft: number;
@@ -35,7 +35,7 @@ export function makeOTP(args: {
   take: (ticket: string) => Promise<OtpRow | null>;
   /** Delivers the otp to an email address or a phone number */
   send: (message: { to: string; otp: string }) => Promise<void>;
-  /** Lifetime of an otp in ms */
+  /** Lifetime of an otp in seconds */
   ttl: number;
   /** How many guesses one ticket allows */
   attempts: number;
@@ -50,7 +50,7 @@ export function makeOTP(args: {
         ticket,
         identifier,
         otp,
-        expiresAt: Date.now() + args.ttl,
+        expiresAt: Math.floor(Date.now() / 1000) + args.ttl,
         attemptsLeft: args.attempts,
       });
       await args.send({ to: identifier, otp });
@@ -84,7 +84,8 @@ export function makeOTP(args: {
       const row = await args.take(ticket);
 
       if (row === null) return fail("unknown_ticket");
-      if (row.expiresAt <= Date.now()) return fail("expired_otp");
+      if (row.expiresAt <= Math.floor(Date.now() / 1000))
+        return fail("expired_otp");
 
       if (row.otp !== otp) {
         if (row.attemptsLeft > 1) {

@@ -14,7 +14,7 @@ export const db = {
   sessions: makeMemoryTable<{
     id: string;
     userId: string;
-    expiresAt: Date;
+    expiresAt: number;
   }>("id"),
   otps: makeMemoryTable<{
     ticket: string;
