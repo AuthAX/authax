@@ -1,0 +1,91 @@
+/**
+ * Stateless. The session travels inside the token, signed so it cannot be
+ * altered. Nothing is stored, so there is nothing to end. A token is valid
+ * until it expires, which is why ttl is not optional here.
+ */
+export function makeSignedSessionManager<Session extends object>(args: {
+  /** HMAC secret. Anyone holding it can mint a session. */
+  secret: string;
+  /** Lifetime of a token in seconds */
+  ttl: number;
+}) {
+  const key = crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(args.secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"],
+  );
+
+  return {
+    /**
+     * Returns the signed token that carries the session
+     *
+     * A route that sets the token as the session cookie must first check
+     * that the request's Origin is one of the app's own. Otherwise a page on
+     * another site can sign the visitor in to the attacker's account.
+     */
+    make: async (session: Session) => {
+      const payload = encode(
+        JSON.stringify({
+          session,
+          exp: Math.floor(Date.now() / 1000) + args.ttl,
+        }),
+      );
+      const signature = await crypto.subtle.sign(
+        "HMAC",
+        await key,
+        bytes(payload),
+      );
+
+      return `${payload}.${encode(signature)}`;
+    },
+
+    get: async (token: string) => {
+      const [payload, signature, ...rest] = token.split(".");
+      if (payload === undefined || signature === undefined || rest.length > 0) {
+        return null;
+      }
+
+      const valid = await crypto.subtle.verify(
+        "HMAC",
+        await key,
+        decode(signature),
+        bytes(payload),
+      );
+      if (!valid) return null;
+
+      // Safe to trust the shape, the signature proves this process wrote it
+      const { session, exp } = JSON.parse(text(decode(payload))) as {
+        session: Session;
+        exp: number;
+      };
+      if (exp <= Math.floor(Date.now() / 1000)) return null;
+
+      return session;
+    },
+  };
+}
+
+function bytes(value: string) {
+  return new TextEncoder().encode(value);
+}
+
+function text(value: Uint8Array) {
+  return new TextDecoder().decode(value);
+}
+
+function encode(value: string | ArrayBuffer) {
+  const raw = typeof value === "string" ? bytes(value) : new Uint8Array(value);
+
+  return btoa(String.fromCharCode(...raw))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/, "");
+}
+
+function decode(value: string) {
+  const padded = value.replaceAll("-", "+").replaceAll("_", "/");
+
+  return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
+}

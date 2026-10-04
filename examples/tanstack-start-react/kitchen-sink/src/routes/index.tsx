@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { makeAuthClient } from "@repo/spike";
 import {
-  requestOtp,
-  verifyOtp,
+  requestChangeEmail,
   changeEmail,
+  deleteAccountSF,
   signOut,
   signOutAll,
   getViewer,
@@ -27,9 +28,12 @@ export const Route = createFileRoute("/")({
 
 type Viewer = { userId: string; email: string };
 
+const authax = makeAuthClient("/api/auth");
+
 function AuthFlow(props: { onSignedIn: () => void }) {
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
+  const [ticket, setTicket] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -39,8 +43,9 @@ function AuthFlow(props: { onSignedIn: () => void }) {
         as="form"
         onSubmit={async (e) => {
           e.preventDefault();
-          const result = await requestOtp({ data: { identifier: email } });
+          const result = await authax.otpSend(email);
           if (result.success) {
+            setTicket(result.ticket);
             setStep("otp");
             setError(null);
           } else {
@@ -65,9 +70,7 @@ function AuthFlow(props: { onSignedIn: () => void }) {
       as="form"
       onSubmit={async (e) => {
         e.preventDefault();
-        const result = await verifyOtp({
-          data: { identifier: email, otp },
-        });
+        const result = await authax.otpVerify({ ticket, otp });
         if (result.success) {
           props.onSignedIn();
         } else {
@@ -82,9 +85,7 @@ function AuthFlow(props: { onSignedIn: () => void }) {
       <OtpInput value={otp} onChange={setOtp} error={error} />
       <Button
         type="submit"
-        disabled={
-          !verifyOtpSchema.safeParse({ identifier: email, otp }).success
-        }
+        disabled={!verifyOtpSchema.safeParse({ ticket, otp }).success}
       >
         Continue
       </Button>
@@ -92,9 +93,15 @@ function AuthFlow(props: { onSignedIn: () => void }) {
         variant="secondary"
         type="button"
         onClick={async () => {
-          await requestOtp({ data: { identifier: email } });
-          setOtp("");
-          setError(null);
+          const result = await authax.otpSend(email);
+
+          if (result.success) {
+            setTicket(result.ticket);
+            setOtp("");
+            setError(null);
+          } else {
+            setError("Failed to send one-time password");
+          }
         }}
       >
         Send a new one-time password
@@ -106,6 +113,7 @@ function AuthFlow(props: { onSignedIn: () => void }) {
 function ChangeEmailFlow(props: { onDone: () => void; onCancel: () => void }) {
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
+  const [ticket, setTicket] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -115,8 +123,12 @@ function ChangeEmailFlow(props: { onDone: () => void; onCancel: () => void }) {
         as="form"
         onSubmit={async (e) => {
           e.preventDefault();
-          const result = await requestOtp({ data: { identifier: email } });
+          const result = await requestChangeEmail({
+            data: { identifier: email },
+          });
+
           if (result.success) {
+            setTicket(result.ticket);
             setStep("otp");
             setError(null);
           } else {
@@ -148,7 +160,7 @@ function ChangeEmailFlow(props: { onDone: () => void; onCancel: () => void }) {
       onSubmit={async (e) => {
         e.preventDefault();
         const result = await changeEmail({
-          data: { identifier: email, otp },
+          data: { ticket, otp },
         });
         if (result.success) {
           props.onDone();
@@ -164,9 +176,7 @@ function ChangeEmailFlow(props: { onDone: () => void; onCancel: () => void }) {
       <OtpInput value={otp} onChange={setOtp} error={error} />
       <Button
         type="submit"
-        disabled={
-          !verifyOtpSchema.safeParse({ identifier: email, otp }).success
-        }
+        disabled={!verifyOtpSchema.safeParse({ ticket, otp }).success}
       >
         Continue
       </Button>
@@ -174,9 +184,17 @@ function ChangeEmailFlow(props: { onDone: () => void; onCancel: () => void }) {
         variant="secondary"
         type="button"
         onClick={async () => {
-          await requestOtp({ data: { identifier: email } });
-          setOtp("");
-          setError(null);
+          const result = await requestChangeEmail({
+            data: { identifier: email },
+          });
+
+          if (result.success) {
+            setTicket(result.ticket);
+            setOtp("");
+            setError(null);
+          } else {
+            setError("Failed to send one-time password");
+          }
         }}
       >
         Send a new one-time password
@@ -230,6 +248,15 @@ function Authenticated(props: {
       >
         Sign out all devices
       </Button>
+      <Button
+        variant="secondary"
+        onClick={async () => {
+          await deleteAccountSF();
+          props.onSignedOut();
+        }}
+      >
+        Delete account
+      </Button>
     </Page>
   );
 }
@@ -239,7 +266,7 @@ function App() {
   const router = useRouter();
 
   return (
-    <AuthLayout demo="One-time password demo">
+    <AuthLayout demo="Kitchen sink example">
       {viewer ? (
         <Authenticated
           viewer={viewer}

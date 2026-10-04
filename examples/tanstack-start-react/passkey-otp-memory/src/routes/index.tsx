@@ -86,6 +86,7 @@ function UnauthenticatedView(props: { onSignedIn: () => void }) {
 function AddEmailFlow(props: { onSuccess: () => void }) {
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
+  const [ticket, setTicket] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -97,6 +98,7 @@ function AddEmailFlow(props: { onSuccess: () => void }) {
           e.preventDefault();
           const result = await requestOtp({ data: { identifier: email } });
           if (result.success) {
+            setTicket(result.ticket);
             setStep("otp");
             setError(null);
           } else {
@@ -125,7 +127,7 @@ function AddEmailFlow(props: { onSuccess: () => void }) {
       onSubmit={async (e) => {
         e.preventDefault();
         const result = await addEmail({
-          data: { identifier: email, otp },
+          data: { ticket, otp },
         });
         if (result.success) {
           props.onSuccess();
@@ -141,9 +143,7 @@ function AddEmailFlow(props: { onSuccess: () => void }) {
       <OtpInput value={otp} onChange={setOtp} error={error} />
       <Button
         type="submit"
-        disabled={
-          !verifyOtpSchema.safeParse({ identifier: email, otp }).success
-        }
+        disabled={!verifyOtpSchema.safeParse({ ticket, otp }).success}
       >
         Verify email
       </Button>

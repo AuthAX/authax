@@ -1,0 +1,49 @@
+/**
+ * The token is a random string the row is stored under. The row is the
+ * session with expiresAt added, so a session has no expiresAt of its own.
+ */
+export function makeOpaqueSessionManager<Session extends object>(args: {
+  /** Stores a session row under the token. expiresAt is in seconds since the epoch. */
+  store: (token: string, row: Session & { expiresAt: number }) => Promise<void>;
+  /** Reads the session row for a token, null when there is none */
+  get: (token: string) => Promise<(Session & { expiresAt: number }) | null>;
+  /** Removes the session row for a token. Does nothing when there is none. */
+  delete: (token: string) => Promise<void>;
+  /** Lifetime of a session in seconds */
+  ttl: number;
+}) {
+  return {
+    /**
+     * Returns the token the session is stored under
+     *
+     * A route that sets the token as the session cookie must first check
+     * that the request's Origin is one of the app's own. Otherwise a page on
+     * another site can sign the visitor in to the attacker's account.
+     */
+    make: async (session: Session) => {
+      const token = crypto.randomUUID();
+
+      await args.store(token, {
+        ...session,
+        expiresAt: Math.floor(Date.now() / 1000) + args.ttl,
+      });
+
+      return token;
+    },
+
+    /** Null when there is no session for the token or it has expired */
+    get: async (token: string): Promise<Session | null> => {
+      const row = await args.get(token);
+
+      if (row === null) return null;
+      if (row.expiresAt <= Math.floor(Date.now() / 1000)) return null;
+
+      return row;
+    },
+
+    /** Ends the session. The token stops working at once. */
+    end: async (token: string) => {
+      await args.delete(token);
+    },
+  };
+}

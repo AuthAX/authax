@@ -1,0 +1,17 @@
+{
+  "name": "@repo/example-bun-spike-otp",
+  "private": true,
+  "license": "MIT-0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot src/server.ts",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@repo/spike": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "typescript": "^6.0.3"
+  }
+}

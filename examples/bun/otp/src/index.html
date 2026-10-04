@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AuthAX - Bun OTP example</title>
+    <script type="module" src="./page.ts"></script>
+  </head>
+  <body>
+    <main>
+      <h1>AuthAX</h1>
+      <p id="viewer" hidden></p>
+      <form id="email-form" hidden>
+        <label>
+          Email address
+          <input name="email" type="email" autocomplete="email" required />
+        </label>
+        <button>Send one-time password</button>
+      </form>
+      <form id="otp-form" hidden>
+        <label>
+          One-time password
+          <input
+            name="otp"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            required
+          />
+        </label>
+        <button>Sign in</button>
+      </form>
+      <p id="error" role="alert"></p>
+    </main>
+  </body>
+</html>
