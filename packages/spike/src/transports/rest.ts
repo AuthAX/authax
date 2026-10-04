@@ -1,4 +1,4 @@
-import type { HandlerResult } from "../handlers/otp-sign-in";
+import type { HandlerResult } from "../flows/otp-auth-flow";
 
 /**
  * Answers one request to the auth routes. The route is the last part of the

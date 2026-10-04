@@ -1,4 +1,4 @@
-export { makeOtpSignIn } from "./handlers/otp-sign-in";
+export { makeOtpSignIn } from "./flows/otp-auth-flow";
 export { makeOpaqueSessionManager } from "./sessions/opaque";
 export { makeSignedSessionManager } from "./sessions/signed";
 export { makeOTP } from "./strategies/otp";

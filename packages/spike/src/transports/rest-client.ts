@@ -1,4 +1,4 @@
-import type { OtpSendBody, OtpVerifyBody } from "../handlers/otp-sign-in";
+import type { OtpSendBody, OtpVerifyBody } from "../flows/otp-auth-flow";
 import { routeNames } from "./route-names";
 
 /**
