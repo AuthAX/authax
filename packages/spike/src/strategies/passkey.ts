@@ -150,7 +150,13 @@ export function makePasskey(args: {
         userVerification: "preferred",
       }),
 
-    /** Takes what the browser made from the options */
+    /**
+     * Takes what the browser made from the options
+     *
+     * A route that signs someone in with the result must first check that
+     * the request's Origin is one of the app's own. Otherwise a page on
+     * another site can sign the visitor in to the attacker's account.
+     */
     finishAuthentication: async (
       credential: PasskeyAuthenticationCredential,
     ): Promise<

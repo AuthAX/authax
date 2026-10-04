@@ -69,6 +69,9 @@ export const otpAuthFlow = makeOtpAuthFlow({
   },
 });
 
+/** Every origin the app's pages are served from */
+export const appOrigins = ["http://localhost:3100"];
+
 /** The session cookie the auth routes set */
 export const sessionCookieConfig = {
   name: "session",

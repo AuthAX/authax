@@ -2,6 +2,12 @@ import { db } from "./db";
 import { sessionManager, sessionTtl, signInOtp } from "./auth";
 import page from "./index.html";
 
+/**
+ * Every origin the page is served from. Not read from the request, since
+ * behind a proxy the request's URL holds the internal address.
+ */
+const origins = ["http://localhost:3108"];
+
 const server = Bun.serve({
   port: 3108,
   development: process.env.NODE_ENV !== "production",
@@ -12,7 +18,9 @@ const server = Bun.serve({
     "/api/otp/send": {
       POST: async (req) => {
         // A page on another site can post here too
-        if (req.headers.get("origin") !== new URL(req.url).origin) {
+        const origin = req.headers.get("origin");
+
+        if (origin === null || !origins.includes(origin)) {
           return new Response(null, { status: 403 });
         }
 
@@ -37,7 +45,9 @@ const server = Bun.serve({
     "/api/otp/verify": {
       POST: async (req) => {
         // A page on another site could sign the visitor in to its own account
-        if (req.headers.get("origin") !== new URL(req.url).origin) {
+        const origin = req.headers.get("origin");
+
+        if (origin === null || !origins.includes(origin)) {
           return new Response(null, { status: 403 });
         }
 

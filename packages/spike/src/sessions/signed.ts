@@ -18,6 +18,13 @@ export function makeSignedSessionManager<Session extends object>(args: {
   );
 
   return {
+    /**
+     * Returns the signed token that carries the session
+     *
+     * A route that sets the token as the session cookie must first check
+     * that the request's Origin is one of the app's own. Otherwise a page on
+     * another site can sign the visitor in to the attacker's account.
+     */
     make: async (session: Session) => {
       const payload = encode(
         JSON.stringify({
