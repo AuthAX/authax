@@ -45,20 +45,6 @@ export const confirmOtp = makeOTP({
   attempts: 3,
 });
 
-/** Confirms that someone who is signed in wants their account deleted */
-export const deleteAccountOtp = makeOTP({
-  purpose: "delete-account",
-  store: async (row) => {
-    await db.otps.insert(row);
-  },
-  take: async (ticket) => db.otps.delete(ticket),
-  send: async ({ to, otp }) => {
-    console.log(`[OTP] Delete account, ${to}: ${otp}`);
-  },
-  ttl: 10 * 60 * 1000,
-  attempts: 3,
-});
-
 /** Signs someone in or up by OTP, mounted in routes/api/auth/$.ts */
 export const otpAuthFlow = makeOtpAuthFlow({
   ...recommendedOtpConfig,

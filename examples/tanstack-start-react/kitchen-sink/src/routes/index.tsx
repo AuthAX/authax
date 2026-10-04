@@ -4,7 +4,6 @@ import { makeAuthClient } from "@repo/spike";
 import {
   requestChangeEmail,
   changeEmail,
-  requestDeleteAccountSF,
   deleteAccountSF,
   signOut,
   signOutAll,
@@ -207,82 +206,12 @@ function ChangeEmailFlow(props: { onDone: () => void; onCancel: () => void }) {
   );
 }
 
-function DeleteAccountFlow(props: {
-  ticket: string;
-  onDone: () => void;
-  onCancel: () => void;
-}) {
-  const [ticket, setTicket] = useState(props.ticket);
-  const [otp, setOtp] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  return (
-    <Page
-      as="form"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const result = await deleteAccountSF({
-          data: { ticket, otp },
-        });
-        if (result.success) {
-          props.onDone();
-        } else {
-          setError("Invalid one-time password");
-        }
-      }}
-    >
-      <Header
-        title="Delete account"
-        description="Enter the one-time password we sent to your email."
-      />
-      <OtpInput value={otp} onChange={setOtp} error={error} />
-      <Button
-        type="submit"
-        disabled={!verifyOtpSchema.safeParse({ ticket, otp }).success}
-      >
-        Delete account
-      </Button>
-      <Button
-        variant="secondary"
-        type="button"
-        onClick={async () => {
-          const result = await requestDeleteAccountSF();
-
-          if (result.success) {
-            setTicket(result.ticket);
-            setOtp("");
-            setError(null);
-          } else {
-            setError("Failed to send one-time password");
-          }
-        }}
-      >
-        Send a new one-time password
-      </Button>
-      <Button variant="secondary" type="button" onClick={props.onCancel}>
-        Cancel
-      </Button>
-    </Page>
-  );
-}
-
 function Authenticated(props: {
   viewer: Viewer;
   onSignedOut: () => void;
   onEmailChanged: () => void;
 }) {
   const [changingEmail, setChangingEmail] = useState(false);
-  const [deleteTicket, setDeleteTicket] = useState<string | null>(null);
-
-  if (deleteTicket !== null) {
-    return (
-      <DeleteAccountFlow
-        ticket={deleteTicket}
-        onDone={props.onSignedOut}
-        onCancel={() => setDeleteTicket(null)}
-      />
-    );
-  }
 
   if (changingEmail) {
     return (
@@ -322,13 +251,8 @@ function Authenticated(props: {
       <Button
         variant="secondary"
         onClick={async () => {
-          const result = await requestDeleteAccountSF();
-
-          if (result.success) {
-            setDeleteTicket(result.ticket);
-          } else {
-            props.onSignedOut();
-          }
+          await deleteAccountSF();
+          props.onSignedOut();
         }}
       >
         Delete account
