@@ -17,10 +17,10 @@ export const db = {
     expiresAt: Date;
   }>("id"),
   otps: makeMemoryTable<{
-    id: string;
-    email: string;
+    ticket: string;
+    identifier: string;
     otp: string;
-    expiresAt: Date;
+    expiresAt: number;
     attemptsLeft: number;
-  }>("id"),
+  }>("ticket"),
 };

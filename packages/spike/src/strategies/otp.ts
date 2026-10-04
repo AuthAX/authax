@@ -1,7 +1,9 @@
 import { fail, succeed, type Result } from "../result";
 
 /** What the app stores for one otp request */
-type OtpRow = {
+export type OtpRow = {
+  /** The key of the row. The client holds it until it verifies. */
+  ticket: string;
   /** The identifier the otp is being sent to (email address or phone number) */
   identifier: string;
   /** The one-time password itself */
@@ -14,14 +16,25 @@ type OtpRow = {
 
 export function makeOTP(args: {
   /**
-   * Stores an otp row under the ticket. Called on send, and again after a
-   * wrong guess to put back the row that take removed.
+   * What this instance is for, such as "confirm-email". It goes into every
+   * ticket, and verify refuses a ticket made for another purpose, so an otp
+   * sent for one thing can never be used for another.
    */
-  store: (ticket: string, row: OtpRow) => Promise<void>;
-  /** Removes the otp row for a ticket and returns it, atomically. Null when there is none. */
+  purpose: string;
+  /**
+   * Stores a new otp row. Also called after a wrong guess, to put the row
+   * back with one attempt less.
+   */
+  store: (row: OtpRow) => Promise<void>;
+  /**
+   * Removes the row for a ticket and returns it, in one step. Null when there
+   * is none. It must remove the row. A row that stays lets the same otp be
+   * used again until it expires, and lets guesses made at the same time get
+   * past the limit.
+   */
   take: (ticket: string) => Promise<OtpRow | null>;
-  /** Delivers the otp to the identifier, an email address or a phone number */
-  send: (identifier: string, otp: string) => Promise<void>;
+  /** Delivers the otp to an email address or a phone number */
+  send: (message: { to: string; otp: string }) => Promise<void>;
   /** Lifetime of an otp in ms */
   ttl: number;
   /** How many guesses one ticket allows */
@@ -30,16 +43,17 @@ export function makeOTP(args: {
   return {
     /** Returns the ticket the requesting client holds until it verifies */
     send: async (identifier: string) => {
-      const ticket = crypto.randomUUID();
+      const ticket = `${args.purpose}:${crypto.randomUUID()}`;
       const otp = sixDigits();
 
-      await args.store(ticket, {
+      await args.store({
+        ticket,
         identifier,
         otp,
         expiresAt: Date.now() + args.ttl,
         attemptsLeft: args.attempts,
       });
-      await args.send(identifier, otp);
+      await args.send({ to: identifier, otp });
 
       return ticket;
     },
@@ -56,6 +70,15 @@ export function makeOTP(args: {
         "unknown_ticket" | "expired_otp" | "wrong_otp"
       >
     > => {
+      // The random part has no colon, so the purpose is everything before the
+      // last one. Comparing the whole of it keeps "email" from accepting a
+      // ticket made for "email:change".
+      const separator = ticket.lastIndexOf(":");
+
+      if (separator === -1 || ticket.slice(0, separator) !== args.purpose) {
+        return fail("unknown_ticket");
+      }
+
       // The row is out of the table while it is checked, so guesses made at
       // the same time cannot get past the limit
       const row = await args.take(ticket);
@@ -65,10 +88,7 @@ export function makeOTP(args: {
 
       if (row.otp !== otp) {
         if (row.attemptsLeft > 1) {
-          await args.store(ticket, {
-            ...row,
-            attemptsLeft: row.attemptsLeft - 1,
-          });
+          await args.store({ ...row, attemptsLeft: row.attemptsLeft - 1 });
         }
 
         return fail("wrong_otp");

@@ -30,29 +30,13 @@ export const sessionManager = makeOpaqueSessionManager<{ userId: string }>({
  * with it in this example.
  */
 export const addEmailOtp = makeOTP({
-  store: async (ticket, row) => {
-    await db.otps.insert({
-      id: ticket,
-      email: row.identifier,
-      otp: row.otp,
-      expiresAt: new Date(row.expiresAt),
-      attemptsLeft: row.attemptsLeft,
-    });
+  purpose: "add-email",
+  store: async (row) => {
+    await db.otps.insert(row);
   },
-  take: async (ticket) => {
-    const row = await db.otps.delete(ticket);
-
-    if (!row) return null;
-
-    return {
-      identifier: row.email,
-      otp: row.otp,
-      expiresAt: row.expiresAt.getTime(),
-      attemptsLeft: row.attemptsLeft,
-    };
-  },
-  send: async (identifier, otp) => {
-    console.log(`[OTP] Add email, ${identifier}: ${otp}`);
+  take: async (ticket) => db.otps.delete(ticket),
+  send: async ({ to, otp }) => {
+    console.log(`[OTP] Add email, ${to}: ${otp}`);
   },
   ttl: 10 * 60 * 1000,
   attempts: 3,

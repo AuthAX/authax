@@ -53,26 +53,28 @@ const opaque = makeOpaqueSessionManager<{ userId: string }>({
 });
 
 const emailOtp = makeOTP({
-  store: async (ticket, row) => {
-    await otpsTable.insert({ ticket, ...row });
+  purpose: "sign-in-email",
+  store: async (row) => {
+    await otpsTable.insert(row);
   },
   take: (ticket) => otpsTable.delete(ticket),
-  send: async (identifier, otp) => {
-    console.log("email to:", identifier, "otp:", otp);
-    delivered.set(identifier, otp);
+  send: async ({ to, otp }) => {
+    console.log("email to:", to, "otp:", otp);
+    delivered.set(to, otp);
   },
   ttl: 10 * 60 * 1000,
   attempts: 3,
 });
 
 const smsOtp = makeOTP({
-  store: async (ticket, row) => {
-    await otpsTable.insert({ ticket, ...row });
+  purpose: "sign-in-sms",
+  store: async (row) => {
+    await otpsTable.insert(row);
   },
   take: (ticket) => otpsTable.delete(ticket),
-  send: async (identifier, otp) => {
-    console.log("sms to:", identifier, "otp:", otp);
-    delivered.set(identifier, otp);
+  send: async ({ to, otp }) => {
+    console.log("sms to:", to, "otp:", otp);
+    delivered.set(to, otp);
   },
   ttl: 10 * 60 * 1000,
   attempts: 3,
